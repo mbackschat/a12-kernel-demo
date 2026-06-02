@@ -2,7 +2,7 @@
 
 A developer-level walkthrough of how the A12 Kernel turns a **DocumentModel + validation rules** into the **errors and warnings** this demo prints. Read [`README.md`](./README.md) first for how to set up and run it.
 
-> ⚠️ **Java only — TypeScript not yet supported.** The `setup/` patches and bootstrap build and publish only the kernel's **Java** artifacts. The kernel also ships a parallel **TypeScript** runtime (`@com.mgmtp.a12.kernel/*`), but it is **not** built/published by this demo's setup (its `@com.mgmtp.a12.utils/*` + devtools npm dependencies aren't wired up — that's an open task). Everything below describes the **Java** path.
+> ⚠️ **Java only — TypeScript not yet supported.** The [`a12-kernel-bootstrap`](https://github.com/mbackschat/a12-kernel-bootstrap) kit builds and publishes only the kernel's **Java** artifacts. The kernel also ships a parallel **TypeScript** runtime (`@com.mgmtp.a12.kernel/*`), but it is **not** built/published by that bootstrap (its `@com.mgmtp.a12.utils/*` + devtools npm dependencies aren't wired up — that's an open task). Everything below describes the **Java** path.
 
 ## 1. The mental model
 
@@ -142,5 +142,5 @@ This Purchase-Order demo is the "hello world". The kernel does a great deal more
 ## 10. Where to look next
 
 - The feature showcases + the "why this is hard elsewhere" comparison: [`SHOWCASE.md`](./SHOWCASE.md)
-- Building the kernel from source (what `setup/` automates): see [`setup/README.md`](./setup/README.md)
+- Building the kernel from source (what the bootstrap automates): see the [`a12-kernel-bootstrap` README](https://github.com/mbackschat/a12-kernel-bootstrap#readme)
 - Official docs & community forum: https://geta12.com/#/docs

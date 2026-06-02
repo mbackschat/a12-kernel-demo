@@ -4,8 +4,8 @@ plugins {
 }
 
 // PUBLIC + LOCAL repositories only. The A12 artifacts are resolved from
-// the local Maven repository (~/.m2), where they were published from source — see the README
-// and the setup/ folder. No private registry is used.
+// the local Maven repository (~/.m2), where they were published from source by the separate
+// a12-kernel-bootstrap kit (https://github.com/mbackschat/a12-kernel-bootstrap). No private registry is used.
 repositories {
     mavenLocal()
     mavenCentral()

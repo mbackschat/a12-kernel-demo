@@ -9,7 +9,7 @@ The premise of the Kernel is: instead of hand-coding validation, you *declare* t
 
 ## Quick start
 
-After the one-time setup (`./setup/bootstrap.sh` — see [Setup](#setup-one-time) below):
+After the one-time setup (run the [`a12-kernel-bootstrap`](https://github.com/mbackschat/a12-kernel-bootstrap) kit — see [Setup](#setup-one-time) below):
 
 - **`gradle demo`** — the basics: build a Purchase-Order model + sample data, validate it, and print the errors/warnings.
 - **`gradle showcases`** — nine feature demos (repeating-group rules, computations, cross-array "SQL-like" logic, the Document API, code generation, …); a tenth, typed accessors, runs on its own via **`gradle runTyped`**. All ten are detailed in **[`SHOWCASE.md`](./SHOWCASE.md)**, and weighed against five mainstream validators (Zod, Pydantic, JSON Schema, Bean Validation, FluentValidation) in **[`COMPARISON.md`](./COMPARISON.md)**.
@@ -47,15 +47,17 @@ Defined in [`PurchaseOrderModel.java`](src/main/java/com/example/a12demo/purchas
 
 ## Setup (one-time)
 
-> ⚠️ **Java only — TypeScript is not wired up yet.** `setup/bootstrap.sh` builds and publishes only the kernel's **Java** artifacts. The kernel's TypeScript packages (`@com.mgmtp.a12.kernel/*`) and their `@com.mgmtp.a12.utils/*` / devtools npm dependencies are **not** built here — wiring up the TS side (e.g. via a local npm registry) is an open task.
+> ⚠️ **Java only — TypeScript is not wired up yet.** The [`a12-kernel-bootstrap`](https://github.com/mbackschat/a12-kernel-bootstrap) kit builds and publishes only the kernel's **Java** artifacts. The kernel's TypeScript packages (`@com.mgmtp.a12.kernel/*`) and their `@com.mgmtp.a12.utils/*` / devtools npm dependencies are **not** built — wiring up the TS side (e.g. via a local npm registry) is an open task.
 
-The kernel and its A12 dependencies must be in your **local Maven repo** (`~/.m2`); their prebuilt **artifacts aren't published to a public Maven repository** (the source is public on GitHub). One command clones the needed repos from public GitHub, applies the required (Java-only) patches, and publishes everything to `mavenLocal`:
+The kernel and its A12 dependencies must be in your **local Maven repo** (`~/.m2`); their prebuilt **artifacts aren't published to a public Maven repository** (the source is public on GitHub). The separate **[`a12-kernel-bootstrap`](https://github.com/mbackschat/a12-kernel-bootstrap)** kit clones the needed repos from public GitHub, applies the required (Java-only) patches, and publishes everything to `mavenLocal`. Clone it **next to this demo** (so its default `A12_ROOT` is the shared parent directory) and run it:
 
 ```sh
-./setup/bootstrap.sh
+ROOT="$HOME/oss/a12"                                                          # the shared parent dir (adjust to your checkout)
+git clone https://github.com/mbackschat/a12-kernel-bootstrap "$ROOT/a12-kernel-bootstrap"
+"$ROOT/a12-kernel-bootstrap/bootstrap.sh"                                     # clone A12 repos -> patch -> publish to mavenLocal
 ```
 
-See **[`setup/README.md`](setup/README.md)** for exactly what it does, **why the patches are needed**, the env-var overrides, and prerequisites: **JDK 21** (runs Gradle), **a JDK 25** (one build-time plugin's toolchain), **git/curl/unzip**, and **Node/npm** (only for the publish step). It pins **Gradle 9.0.0** (9.5.1 is incompatible with the kernel-mm build).
+See the **[`a12-kernel-bootstrap` README](https://github.com/mbackschat/a12-kernel-bootstrap#readme)** for exactly what it does, **why the patches are needed**, the env-var overrides, and prerequisites: **JDK 21** (runs Gradle), **a JDK 25** (one build-time plugin's toolchain), **git/curl/unzip**, and **Node/npm** (only for the publish step). It pins **Gradle 9.0.0** (9.5.1 is incompatible with the kernel-mm build).
 
 ## Compatibility — kernel versions
 
@@ -70,7 +72,7 @@ This demo is built and verified against the **2025.06-ext5 / kernel 30.8.1** A12
 | Groovy (runtime, dynamic path) | 3.0.25 |
 | JDK / Gradle | 21 / 9.0.0 |
 
-These are pinned in [`build.gradle`](./build.gradle); after setup, `mavenLocal` holds exactly these. `setup/bootstrap.sh` builds the kernel **from source** out of the OSS sibling repos — and since it clones each repo's *default branch*, a repo that has moved past this release can publish a **different** version than the demo pins. So the script:
+These are pinned in [`build.gradle`](./build.gradle); after setup, `mavenLocal` holds exactly these. The [`a12-kernel-bootstrap`](https://github.com/mbackschat/a12-kernel-bootstrap) kit builds the kernel **from source** out of the OSS sibling repos — and since it clones each repo's *default branch*, a repo that has moved past this release can publish a **different** version than the demo pins. So the script:
 
 - **warns** (without failing) if the kernel version it published to `mavenLocal` isn't `30.8.1`, and
 - on any failure, **hints** that a version mismatch is a likely cause.
@@ -93,7 +95,7 @@ GRADLE="$ROOT/.gradle-dist/gradle-9.0.0/bin/gradle"  # the Gradle the setup down
 "$GRADLE" -p "$ROOT/a12-kernel-demo" --no-daemon demo
 ```
 
-`validate` (also the default `run` task) loads whatever is already in `output/`, so once the model is built you can re-validate repeatedly without rebuilding it. (If your default `gradle`/JDK already resolve from public repos on JDK 21, plain `gradle buildModels` / `gradle validate` work too.) `setup/bootstrap.sh` prints a ready-to-paste run command at the end.
+`validate` (also the default `run` task) loads whatever is already in `output/`, so once the model is built you can re-validate repeatedly without rebuilding it. (If your default `gradle`/JDK already resolve from public repos on JDK 21, plain `gradle buildModels` / `gradle validate` work too.) The `a12-kernel-bootstrap` kit prints a ready-to-paste run command at the end (set `A12_CONSUMER_DIR` to this demo's path to have it filled in for you).
 
 ## Expected output
 
@@ -133,4 +135,4 @@ Two copies exist, on purpose:
 
 ## License
 
-This demo is released under the **MIT License** — see [`LICENSE`](./LICENSE). That covers *this repository's own* code, docs, and setup scripts. The **A12 Kernel** and the A12 OSS repositories this project builds on (and the small patches in `setup/`) are mgm's, licensed separately — see those repositories for their terms.
+This demo is released under the **MIT License** — see [`LICENSE`](./LICENSE). That covers *this repository's own* code and docs. The **A12 Kernel** and the A12 OSS repositories this project builds on (built from source by the separate [`a12-kernel-bootstrap`](https://github.com/mbackschat/a12-kernel-bootstrap) kit, where the small build-time patches now live) are mgm's, licensed separately — see those repositories for their terms.

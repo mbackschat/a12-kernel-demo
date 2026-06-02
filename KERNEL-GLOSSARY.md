@@ -151,7 +151,7 @@ How the language treats truth values, missing data, numbers, dates, the "require
 - **No negation operator** — there is no `Not`; use the paired predicates (`NoFieldFilled`, `NotAllFieldsFilled`, …).
 - **Boolean is three-state** — `[Flag] == False` is not "unchecked"; an unset Boolean satisfies neither `== True` nor `== False`.
 - **Keyword collisions** — a field named like a keyword (e.g. `Date`) must be single-quoted in a path: `Order/'Date'`.
-- **`MVK_*` codes** — the catalog of parser/validation diagnostics emitted when a rule won't compile.
+- **`MVK_*` codes** — entries in the kernel's catalog of parser/validation diagnostics, emitted when a rule won't compile (e.g. `MVK_BRACKET_MISSING`, `MVK_ERROR_FIELD_NOT_REFERENCED`). **MVK** (*Modell-Validierungs-Kern*, "model-validation kernel") is the internal name of the component that parses the DSL and generates the validation/computation code (the service interface is `IMVK_Service`; inside the compiler a model's metamodel is rooted at `/MVK/Model/…`).
 
 See [`KERNEL-SEMANTICS.md`](./KERNEL-SEMANTICS.md) for these and the rest — Boolean/Confirm details, the "required" property, decimal-scale and rounding rules, date arithmetic, repetition and path rules, computations, and the full/partial validation model.
 
@@ -163,7 +163,7 @@ See [`KERNEL-SEMANTICS.md`](./KERNEL-SEMANTICS.md) for these and the rest — Bo
 
   *Docs:* Developer guide → *Architecture*
 - **`kernel-md-facade`** — the single public entry-point artifact a consumer depends on (`md` = model & document, per above); it transitively pulls in model/runtime/serializer.
-- **`mavenLocal` / the bootstrap** — the kernel's source is public (on GitHub) but its prebuilt artifacts aren't published to a public Maven repository, so `setup/bootstrap.sh` builds them from those open-source repositories and publishes them to your local Maven repo (`~/.m2`). See [`README.md`](./README.md) → Setup and [`setup/README.md`](setup/README.md).
+- **`mavenLocal` / the bootstrap** — the kernel's source is public (on GitHub) but its prebuilt artifacts aren't published to a public Maven repository, so the [`a12-kernel-bootstrap`](https://github.com/mbackschat/a12-kernel-bootstrap) kit builds them from those open-source repositories and publishes them to your local Maven repo (`~/.m2`). See [`README.md`](./README.md) → Setup and the [`a12-kernel-bootstrap` README](https://github.com/mbackschat/a12-kernel-bootstrap#readme).
 
 ---
 
