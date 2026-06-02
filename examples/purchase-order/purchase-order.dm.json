@@ -1,0 +1,182 @@
+{
+  "header": {
+    "id": "purchase-order",
+    "modelType": "document",
+    "modelVersion": "28.4.0",
+    "locales": [
+      {
+        "code": "en_US"
+      }
+    ],
+    "labels": [],
+    "annotations": [],
+    "modelReferences": []
+  },
+  "content": {
+    "modelInfo": {
+      "name": "purchase-order",
+      "variant": "cockpit",
+      "revision": "Arbeitsversion",
+      "immutable": false
+    },
+    "modelConfig": {
+      "decimalSeparator": ".",
+      "timeZone": "Europe/Berlin",
+      "conditionLanguage": {
+        "code": "en_US"
+      },
+      "fieldRefByShortNameAllowed": true
+    },
+    "modelRoot": {
+      "rootGroups": [
+        {
+          "type": "Group",
+          "id": "/Order",
+          "name": "Order",
+          "Group": {
+            "repeatability": 1,
+            "elements": [
+              {
+                "type": "Field",
+                "id": "/Order/CustomerName",
+                "name": "CustomerName",
+                "Field": {
+                  "fieldType": {
+                    "type": "StringType"
+                  }
+                }
+              },
+              {
+                "type": "Field",
+                "id": "/Order/OrderDate",
+                "name": "OrderDate",
+                "Field": {
+                  "fieldType": {
+                    "type": "DateType",
+                    "DateType": {
+                      "format": "yyyy-MM-dd"
+                    }
+                  }
+                }
+              },
+              {
+                "type": "Field",
+                "id": "/Order/DeliveryDate",
+                "name": "DeliveryDate",
+                "Field": {
+                  "fieldType": {
+                    "type": "DateType",
+                    "DateType": {
+                      "format": "yyyy-MM-dd"
+                    }
+                  }
+                }
+              },
+              {
+                "type": "Field",
+                "id": "/Order/Quantity",
+                "name": "Quantity",
+                "Field": {
+                  "fieldType": {
+                    "type": "NumberType"
+                  }
+                }
+              },
+              {
+                "type": "Field",
+                "id": "/Order/UnitPrice",
+                "name": "UnitPrice",
+                "Field": {
+                  "fieldType": {
+                    "type": "NumberType",
+                    "NumberType": {
+                      "maxFractionalDigits": 2
+                    }
+                  }
+                }
+              },
+              {
+                "type": "Field",
+                "id": "/Order/Express",
+                "name": "Express",
+                "Field": {
+                  "fieldType": {
+                    "type": "BooleanType"
+                  }
+                }
+              },
+              {
+                "type": "Rule",
+                "id": "/Order/CustomerRequiredRule",
+                "name": "CustomerRequiredRule",
+                "Rule": {
+                  "errorEntityRelPath": "../CustomerName",
+                  "errorCode": "CUSTOMER_REQUIRED",
+                  "errorCondition": "FieldNotFilled(CustomerName)",
+                  "severity": "ERROR",
+                  "errorMessage": [
+                    {
+                      "locale": "en_US",
+                      "text": "Customer name is required."
+                    }
+                  ]
+                }
+              },
+              {
+                "type": "Rule",
+                "id": "/Order/QuantityPositiveRule",
+                "name": "QuantityPositiveRule",
+                "Rule": {
+                  "errorEntityRelPath": "../Quantity",
+                  "errorCode": "QTY_POSITIVE",
+                  "errorCondition": "FieldFilled(Quantity) And [Quantity] <= 0",
+                  "severity": "ERROR",
+                  "errorMessage": [
+                    {
+                      "locale": "en_US",
+                      "text": "Quantity must be greater than 0."
+                    }
+                  ]
+                }
+              },
+              {
+                "type": "Rule",
+                "id": "/Order/DeliveryAfterOrderRule",
+                "name": "DeliveryAfterOrderRule",
+                "Rule": {
+                  "errorEntityRelPath": "../DeliveryDate",
+                  "errorCode": "DELIVERY_BEFORE_ORDER",
+                  "errorCondition": "FieldFilled(OrderDate) And FieldFilled(DeliveryDate) And [DeliveryDate] < [OrderDate]",
+                  "severity": "ERROR",
+                  "errorMessage": [
+                    {
+                      "locale": "en_US",
+                      "text": "Delivery date must not be before the order date."
+                    }
+                  ]
+                }
+              },
+              {
+                "type": "Rule",
+                "id": "/Order/LargeOrderRule",
+                "name": "LargeOrderRule",
+                "Rule": {
+                  "errorEntityRelPath": "../Quantity",
+                  "errorCode": "LARGE_ORDER",
+                  "errorCondition": "FieldFilled(Quantity) And [Quantity] > 1000",
+                  "severity": "WARNING",
+                  "errorMessage": [
+                    {
+                      "locale": "en_US",
+                      "text": "Large quantity (> 1000) — please double-check."
+                    }
+                  ]
+                }
+              }
+            ]
+          }
+        }
+      ]
+    }
+  }
+}

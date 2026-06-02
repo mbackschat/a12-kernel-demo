@@ -1,0 +1,17 @@
+{
+  "Playlist": {
+    "Name": "Morning Focus",
+    "Tracks": [
+      {
+        "Explicit": false,
+        "Seconds": 200,
+        "Title": "Aurora"
+      },
+      {
+        "Explicit": false,
+        "Seconds": 240,
+        "Title": "Tides"
+      }
+    ]
+  }
+}

@@ -1,0 +1,403 @@
+{
+  "header": {
+    "id": "event-registration",
+    "modelType": "document",
+    "modelVersion": "28.4.0",
+    "locales": [
+      {
+        "code": "en_US"
+      }
+    ],
+    "labels": [],
+    "annotations": [],
+    "modelReferences": []
+  },
+  "content": {
+    "modelInfo": {
+      "name": "event-registration",
+      "variant": "cockpit",
+      "revision": "Arbeitsversion",
+      "immutable": false
+    },
+    "modelConfig": {
+      "decimalSeparator": ".",
+      "timeZone": "Europe/Berlin",
+      "conditionLanguage": {
+        "code": "en_US"
+      },
+      "fieldRefByShortNameAllowed": true
+    },
+    "modelRoot": {
+      "rootGroups": [
+        {
+          "type": "Group",
+          "id": "/Reg",
+          "name": "Reg",
+          "Group": {
+            "repeatability": 1,
+            "elements": [
+              {
+                "type": "Field",
+                "id": "/Reg/TicketCode",
+                "name": "TicketCode",
+                "Field": {
+                  "fieldType": {
+                    "type": "StringType"
+                  }
+                }
+              },
+              {
+                "type": "Field",
+                "id": "/Reg/PromoCode",
+                "name": "PromoCode",
+                "Field": {
+                  "fieldType": {
+                    "type": "StringType"
+                  }
+                }
+              },
+              {
+                "type": "Field",
+                "id": "/Reg/AccessPin",
+                "name": "AccessPin",
+                "Field": {
+                  "fieldType": {
+                    "type": "StringType"
+                  }
+                }
+              },
+              {
+                "type": "Field",
+                "id": "/Reg/QuotedFee",
+                "name": "QuotedFee",
+                "Field": {
+                  "fieldType": {
+                    "type": "NumberType"
+                  }
+                }
+              },
+              {
+                "type": "Field",
+                "id": "/Reg/PaidFee",
+                "name": "PaidFee",
+                "Field": {
+                  "fieldType": {
+                    "type": "NumberType"
+                  }
+                }
+              },
+              {
+                "type": "Field",
+                "id": "/Reg/SeatBlock",
+                "name": "SeatBlock",
+                "Field": {
+                  "fieldType": {
+                    "type": "StringType"
+                  }
+                }
+              },
+              {
+                "type": "Field",
+                "id": "/Reg/PassportExpiry",
+                "name": "PassportExpiry",
+                "Field": {
+                  "fieldType": {
+                    "type": "DateType",
+                    "DateType": {
+                      "format": "yyyy-MM-dd"
+                    }
+                  }
+                }
+              },
+              {
+                "type": "Field",
+                "id": "/Reg/EventDate",
+                "name": "EventDate",
+                "Field": {
+                  "fieldType": {
+                    "type": "DateType",
+                    "DateType": {
+                      "format": "yyyy-MM-dd"
+                    }
+                  }
+                }
+              },
+              {
+                "type": "Field",
+                "id": "/Reg/DeclineReason",
+                "name": "DeclineReason",
+                "Field": {
+                  "fieldType": {
+                    "type": "StringType"
+                  }
+                }
+              },
+              {
+                "type": "Field",
+                "id": "/Reg/Phone",
+                "name": "Phone",
+                "Field": {
+                  "fieldType": {
+                    "type": "StringType"
+                  }
+                }
+              },
+              {
+                "type": "Field",
+                "id": "/Reg/Email",
+                "name": "Email",
+                "Field": {
+                  "fieldType": {
+                    "type": "StringType"
+                  }
+                }
+              },
+              {
+                "type": "Field",
+                "id": "/Reg/Decision",
+                "name": "Decision",
+                "Field": {
+                  "fieldType": {
+                    "type": "EnumerationType",
+                    "EnumerationType": {
+                      "values": [
+                        {
+                          "value": "CONFIRMED",
+                          "label": [
+                            {
+                              "locale": "en_US",
+                              "text": "Confirmed"
+                            },
+                            {
+                              "locale": "de_DE",
+                              "text": "Bestätigt"
+                            }
+                          ]
+                        },
+                        {
+                          "value": "WAITLISTED",
+                          "label": [
+                            {
+                              "locale": "en_US",
+                              "text": "Waitlisted"
+                            },
+                            {
+                              "locale": "de_DE",
+                              "text": "Warteliste"
+                            }
+                          ]
+                        },
+                        {
+                          "value": "DECLINED",
+                          "label": [
+                            {
+                              "locale": "en_US",
+                              "text": "Declined"
+                            },
+                            {
+                              "locale": "de_DE",
+                              "text": "Abgelehnt"
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  }
+                }
+              },
+              {
+                "type": "Rule",
+                "id": "/Reg/TicketRegionRule",
+                "name": "TicketRegionRule",
+                "Rule": {
+                  "errorEntityRelPath": "../TicketCode",
+                  "errorCode": "TICKET_NOT_EU",
+                  "errorCondition": "FieldFilled(TicketCode) And RangeAsString(TicketCode, 1, 2) != \"EU\"",
+                  "severity": "ERROR",
+                  "errorMessage": [
+                    {
+                      "locale": "en_US",
+                      "text": "Ticket code must be issued in the EU region (EU-...)."
+                    },
+                    {
+                      "locale": "de_DE",
+                      "text": "Ticketcode muss aus der EU-Region stammen (EU-...)."
+                    }
+                  ]
+                }
+              },
+              {
+                "type": "Rule",
+                "id": "/Reg/PromoFormatRule",
+                "name": "PromoFormatRule",
+                "Rule": {
+                  "errorEntityRelPath": "../PromoCode",
+                  "errorCode": "PROMO_FORMAT",
+                  "errorCondition": "FieldFilled(PromoCode) And [PromoCode] PatternViolated \"[A-Z]{2}[0-9]{4}\"",
+                  "severity": "ERROR",
+                  "errorMessage": [
+                    {
+                      "locale": "en_US",
+                      "text": "Promo code must be 2 letters followed by 4 digits."
+                    },
+                    {
+                      "locale": "de_DE",
+                      "text": "Promocode: 2 Buchstaben gefolgt von 4 Ziffern."
+                    }
+                  ]
+                }
+              },
+              {
+                "type": "Rule",
+                "id": "/Reg/PinLengthRule",
+                "name": "PinLengthRule",
+                "Rule": {
+                  "errorEntityRelPath": "../AccessPin",
+                  "errorCode": "PIN_LENGTH",
+                  "errorCondition": "FieldFilled(AccessPin) And Length(AccessPin) != 5",
+                  "severity": "ERROR",
+                  "errorMessage": [
+                    {
+                      "locale": "en_US",
+                      "text": "Access PIN must be exactly 5 characters."
+                    },
+                    {
+                      "locale": "de_DE",
+                      "text": "Zugangs-PIN muss genau 5 Zeichen haben."
+                    }
+                  ]
+                }
+              },
+              {
+                "type": "Rule",
+                "id": "/Reg/FeeMismatchRule",
+                "name": "FeeMismatchRule",
+                "Rule": {
+                  "errorEntityRelPath": "../QuotedFee",
+                  "errorCode": "FEE_MISMATCH",
+                  "errorCondition": "[QuotedFee] DiffersWithToleranceRange5 [PaidFee]",
+                  "severity": "WARNING",
+                  "errorMessage": [
+                    {
+                      "locale": "en_US",
+                      "text": "Paid fee differs from the quote by more than 5."
+                    },
+                    {
+                      "locale": "de_DE",
+                      "text": "Gezahlte Gebühr weicht um mehr als 5 vom Angebot ab."
+                    }
+                  ]
+                }
+              },
+              {
+                "type": "Rule",
+                "id": "/Reg/SeatSoldOutRule",
+                "name": "SeatSoldOutRule",
+                "Rule": {
+                  "errorEntityRelPath": "../SeatBlock",
+                  "errorCode": "SEAT_SOLD_OUT",
+                  "errorCondition": "FieldValueIncludedInValueList(SeatBlock, \"VIP\", \"BACKSTAGE\", \"PRESS\")",
+                  "severity": "ERROR",
+                  "errorMessage": [
+                    {
+                      "locale": "en_US",
+                      "text": "That seat block is sold out."
+                    },
+                    {
+                      "locale": "de_DE",
+                      "text": "Dieser Sitzblock ist ausverkauft."
+                    }
+                  ]
+                }
+              },
+              {
+                "type": "Rule",
+                "id": "/Reg/PassportValidityRule",
+                "name": "PassportValidityRule",
+                "Rule": {
+                  "errorEntityRelPath": "../PassportExpiry",
+                  "errorCode": "PASSPORT_EXPIRES_SOON",
+                  "errorCondition": "FieldFilled(PassportExpiry) And DifferenceInMonths(Today, PassportExpiry) < 6",
+                  "severity": "ERROR",
+                  "errorMessage": [
+                    {
+                      "locale": "en_US",
+                      "text": "Passport must be valid for at least 6 more months."
+                    },
+                    {
+                      "locale": "de_DE",
+                      "text": "Reisepass muss noch mindestens 6 Monate gültig sein."
+                    }
+                  ]
+                }
+              },
+              {
+                "type": "Rule",
+                "id": "/Reg/EventPastRule",
+                "name": "EventPastRule",
+                "Rule": {
+                  "errorEntityRelPath": "../EventDate",
+                  "errorCode": "EVENT_IN_PAST",
+                  "errorCondition": "FieldFilled(EventDate) And [EventDate] < Today",
+                  "severity": "ERROR",
+                  "errorMessage": [
+                    {
+                      "locale": "en_US",
+                      "text": "The event date has already passed."
+                    },
+                    {
+                      "locale": "de_DE",
+                      "text": "Das Veranstaltungsdatum liegt in der Vergangenheit."
+                    }
+                  ]
+                }
+              },
+              {
+                "type": "Rule",
+                "id": "/Reg/DeclineReasonRule",
+                "name": "DeclineReasonRule",
+                "Rule": {
+                  "errorEntityRelPath": "../DeclineReason",
+                  "errorCode": "REASON_REQUIRED",
+                  "errorCondition": "[Decision] == \"DECLINED\" And FieldNotFilled(DeclineReason)",
+                  "severity": "ERROR",
+                  "errorMessage": [
+                    {
+                      "locale": "en_US",
+                      "text": "A reason is required when a registration is declined."
+                    },
+                    {
+                      "locale": "de_DE",
+                      "text": "Bei Ablehnung ist eine Begründung erforderlich."
+                    }
+                  ]
+                }
+              },
+              {
+                "type": "Rule",
+                "id": "/Reg/ContactRule",
+                "name": "ContactRule",
+                "Rule": {
+                  "errorEntityRelPath": "../Phone",
+                  "errorCode": "CONTACT_REQUIRED",
+                  "errorCondition": "NoFieldFilled(Phone, Email)",
+                  "severity": "ERROR",
+                  "errorMessage": [
+                    {
+                      "locale": "en_US",
+                      "text": "Provide at least one contact: phone or email."
+                    },
+                    {
+                      "locale": "de_DE",
+                      "text": "Mindestens einen Kontakt angeben: Telefon oder E-Mail."
+                    }
+                  ]
+                }
+              }
+            ]
+          }
+        }
+      ]
+    }
+  }
+}

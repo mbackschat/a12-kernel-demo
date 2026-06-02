@@ -1,0 +1,247 @@
+{
+  "header": {
+    "id": "shipment-routing",
+    "modelType": "document",
+    "modelVersion": "28.4.0",
+    "locales": [
+      {
+        "code": "en_US"
+      }
+    ],
+    "labels": [],
+    "annotations": [],
+    "modelReferences": []
+  },
+  "content": {
+    "modelInfo": {
+      "name": "shipment-routing",
+      "variant": "cockpit",
+      "revision": "Arbeitsversion",
+      "immutable": false
+    },
+    "modelConfig": {
+      "decimalSeparator": ".",
+      "timeZone": "Europe/Berlin",
+      "conditionLanguage": {
+        "code": "en_US"
+      },
+      "fieldRefByShortNameAllowed": true
+    },
+    "modelRoot": {
+      "rootGroups": [
+        {
+          "type": "Group",
+          "id": "/Shipment",
+          "name": "Shipment",
+          "Group": {
+            "repeatability": 1,
+            "elements": [
+              {
+                "type": "Group",
+                "id": "/Shipment/Demand",
+                "name": "Demand",
+                "Group": {
+                  "repeatability": 50,
+                  "indexFieldName": "Warehouse",
+                  "elements": [
+                    {
+                      "type": "Field",
+                      "id": "/Shipment/Demand/Units",
+                      "name": "Units",
+                      "Field": {
+                        "fieldType": {
+                          "type": "NumberType"
+                        }
+                      }
+                    },
+                    {
+                      "type": "Field",
+                      "id": "/Shipment/Demand/Warehouse",
+                      "name": "Warehouse",
+                      "Field": {
+                        "fieldType": {
+                          "type": "StringType"
+                        }
+                      }
+                    }
+                  ]
+                }
+              },
+              {
+                "type": "Group",
+                "id": "/Shipment/Capacity",
+                "name": "Capacity",
+                "Group": {
+                  "repeatability": 50,
+                  "indexFieldName": "Warehouse",
+                  "elements": [
+                    {
+                      "type": "Field",
+                      "id": "/Shipment/Capacity/Units",
+                      "name": "Units",
+                      "Field": {
+                        "fieldType": {
+                          "type": "NumberType"
+                        }
+                      }
+                    },
+                    {
+                      "type": "Field",
+                      "id": "/Shipment/Capacity/Warehouse",
+                      "name": "Warehouse",
+                      "Field": {
+                        "fieldType": {
+                          "type": "StringType"
+                        }
+                      }
+                    }
+                  ]
+                }
+              },
+              {
+                "type": "Group",
+                "id": "/Shipment/Stops",
+                "name": "Stops",
+                "Group": {
+                  "repeatability": 100,
+                  "elements": [
+                    {
+                      "type": "Field",
+                      "id": "/Shipment/Stops/Location",
+                      "name": "Location",
+                      "Field": {
+                        "fieldType": {
+                          "type": "StringType"
+                        }
+                      }
+                    },
+                    {
+                      "type": "Field",
+                      "id": "/Shipment/Stops/Eta",
+                      "name": "Eta",
+                      "Field": {
+                        "fieldType": {
+                          "type": "DateType",
+                          "DateType": {
+                            "format": "yyyy-MM-dd"
+                          }
+                        }
+                      }
+                    },
+                    {
+                      "type": "Rule",
+                      "id": "/Shipment/Stops/OutOfOrderRule",
+                      "name": "OutOfOrderRule",
+                      "Rule": {
+                        "errorEntityRelPath": "../Eta",
+                        "errorCode": "OUT_OF_ORDER",
+                        "errorCondition": "MaxValue(/Shipment/Stops*/Eta Having CurrentRepetition(/Shipment/Stops) < CurrentRepetition($/Shipment/Stops)) >= [/Shipment/Stops/Eta]",
+                        "severity": "ERROR",
+                        "errorMessage": [
+                          {
+                            "locale": "en_US",
+                            "text": "Stop ETAs must be in chronological order."
+                          },
+                          {
+                            "locale": "de_DE",
+                            "text": "Stopp-Ankunftszeiten müssen chronologisch geordnet sein."
+                          }
+                        ]
+                      }
+                    },
+                    {
+                      "type": "Rule",
+                      "id": "/Shipment/Stops/HolidayClashRule",
+                      "name": "HolidayClashRule",
+                      "Rule": {
+                        "errorEntityRelPath": "../Eta",
+                        "errorCode": "DELIVERY_ON_HOLIDAY",
+                        "errorCondition": "FieldFilled(/Shipment/Stops/Eta) And NumberOfFilledFields(/Shipment/Holidays*/HolidayDate Having [/Shipment/Holidays/HolidayDate] == [$/Shipment/Stops/Eta]) > 0",
+                        "severity": "ERROR",
+                        "errorMessage": [
+                          {
+                            "locale": "en_US",
+                            "text": "Delivery is scheduled on a holiday."
+                          },
+                          {
+                            "locale": "de_DE",
+                            "text": "Lieferung ist an einem Feiertag geplant."
+                          }
+                        ]
+                      }
+                    }
+                  ]
+                }
+              },
+              {
+                "type": "Group",
+                "id": "/Shipment/Holidays",
+                "name": "Holidays",
+                "Group": {
+                  "repeatability": 100,
+                  "elements": [
+                    {
+                      "type": "Field",
+                      "id": "/Shipment/Holidays/HolidayDate",
+                      "name": "HolidayDate",
+                      "Field": {
+                        "fieldType": {
+                          "type": "DateType",
+                          "DateType": {
+                            "format": "yyyy-MM-dd"
+                          }
+                        }
+                      }
+                    }
+                  ]
+                }
+              },
+              {
+                "type": "Rule",
+                "id": "/Shipment/UnmatchedWarehouseRule",
+                "name": "UnmatchedWarehouseRule",
+                "Rule": {
+                  "errorEntityRelPath": "../Demand/Units",
+                  "errorCode": "UNMATCHED_WAREHOUSE",
+                  "errorCondition": "FieldsNotCollectivelyFilled(Demand/Units, Capacity/Units)",
+                  "severity": "ERROR",
+                  "errorMessage": [
+                    {
+                      "locale": "en_US",
+                      "text": "This warehouse has demand and capacity declared inconsistently."
+                    },
+                    {
+                      "locale": "de_DE",
+                      "text": "Für dieses Lager sind Bedarf und Kapazität inkonsistent erfasst."
+                    }
+                  ]
+                }
+              },
+              {
+                "type": "Rule",
+                "id": "/Shipment/OverCapacityRule",
+                "name": "OverCapacityRule",
+                "Rule": {
+                  "errorEntityRelPath": "../Demand/Units",
+                  "errorCode": "OVER_CAPACITY",
+                  "errorCondition": "FieldFilled(Demand/Units) And FieldFilled(Capacity/Units) And [Demand/Units] > [Capacity/Units]",
+                  "severity": "ERROR",
+                  "errorMessage": [
+                    {
+                      "locale": "en_US",
+                      "text": "Demanded units exceed the warehouse capacity."
+                    },
+                    {
+                      "locale": "de_DE",
+                      "text": "Bedarf übersteigt die Lagerkapazität."
+                    }
+                  ]
+                }
+              }
+            ]
+          }
+        }
+      ]
+    }
+  }
+}

@@ -1,0 +1,85 @@
+{
+  "header": {
+    "id": "recipe",
+    "modelType": "document",
+    "modelVersion": "28.4.0",
+    "locales": [
+      {
+        "code": "en_US"
+      }
+    ],
+    "labels": [],
+    "annotations": [],
+    "modelReferences": []
+  },
+  "content": {
+    "modelInfo": {
+      "name": "recipe",
+      "variant": "cockpit",
+      "revision": "Arbeitsversion",
+      "immutable": false
+    },
+    "modelConfig": {
+      "decimalSeparator": ".",
+      "timeZone": "Europe/Berlin",
+      "conditionLanguage": {
+        "code": "en_US"
+      },
+      "fieldRefByShortNameAllowed": true
+    },
+    "modelRoot": {
+      "rootGroups": [
+        {
+          "type": "Group",
+          "id": "/Recipe",
+          "name": "Recipe",
+          "Group": {
+            "repeatability": 1,
+            "elements": [
+              {
+                "type": "Field",
+                "id": "/Recipe/Title",
+                "name": "Title",
+                "Field": {
+                  "fieldType": {
+                    "type": "StringType"
+                  }
+                }
+              },
+              {
+                "type": "Group",
+                "id": "/Recipe/Ingredients",
+                "name": "Ingredients",
+                "Group": {
+                  "repeatability": 50,
+                  "elements": [
+                    {
+                      "type": "Field",
+                      "id": "/Recipe/Ingredients/Name",
+                      "name": "Name",
+                      "Field": {
+                        "fieldType": {
+                          "type": "StringType"
+                        }
+                      }
+                    },
+                    {
+                      "type": "Field",
+                      "id": "/Recipe/Ingredients/Grams",
+                      "name": "Grams",
+                      "Field": {
+                        "fieldType": {
+                          "type": "NumberType"
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            ]
+          }
+        }
+      ]
+    }
+  }
+}

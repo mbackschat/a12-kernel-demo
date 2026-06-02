@@ -1,0 +1,10 @@
+{
+  "Employment": {
+    "Employer": "Globex",
+    "MonthlyIncome": 2000
+  },
+  "Loan": {
+    "Amount": 500000,
+    "TermMonths": 120
+  }
+}

@@ -1,0 +1,17 @@
+{
+  "Playlist": {
+    "Name": "Marathon",
+    "Tracks": [
+      {
+        "Explicit": true,
+        "Seconds": 2000,
+        "Title": "Epic I"
+      },
+      {
+        "Explicit": true,
+        "Seconds": 2000,
+        "Title": "Epic II"
+      }
+    ]
+  }
+}

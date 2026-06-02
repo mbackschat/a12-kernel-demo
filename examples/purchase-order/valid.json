@@ -1,0 +1,10 @@
+{
+  "Order": {
+    "CustomerName": "ACME Corp",
+    "DeliveryDate": "2026-01-20",
+    "Express": false,
+    "OrderDate": "2026-01-10",
+    "Quantity": 5,
+    "UnitPrice": 9.99
+  }
+}

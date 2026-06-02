@@ -1,0 +1,181 @@
+plugins {
+    id 'java'
+    id 'application'
+}
+
+// PUBLIC + LOCAL repositories only. The A12 artifacts are resolved from
+// the local Maven repository (~/.m2), where they were published from source — see the README
+// and the setup/ folder. No private registry is used.
+repositories {
+    mavenLocal()
+    mavenCentral()
+}
+
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(21)
+    }
+}
+
+def kernelVersion = '30.8.1'
+def baseVersion   = '29.3.0'
+def groovyVersion = '3.0.25'
+
+dependencies {
+    // Single consumer entry point — transitively pulls model/runtime/serializer/document-v2/
+    // runtime-api/base-model-api/customfieldtype-api/conversion/commons etc.
+    implementation "com.mgmtp.a12.kernel:kernel-md-facade:${kernelVersion}"
+
+    // The facade pulls these only at runtime; we need them on the COMPILE classpath because the demo
+    // builds the model with the (A12-internal-tier) builder API:
+    //   com.mgmtp.a12.kernel.md.model.internal.betterbuilders.*   -> kernel-md-model
+    //   com.mgmtp.a12.kernel.md.model.a12internal.{DocumentModel,Field,Rule,...} -> kernel-md-a12internal
+    implementation "com.mgmtp.a12.kernel:kernel-md-model:${kernelVersion}"
+    implementation "com.mgmtp.a12.kernel:kernel-md-a12internal:${kernelVersion}"
+    // for the a12internal DocumentModelSerializer: serialize the built model to canonical DM JSON
+    // (review file) and bridge it to the public IDocumentModel
+    implementation "com.mgmtp.a12.kernel:kernel-md-serializer:${kernelVersion}"
+
+    // Runtime needs (dynamic validation path):
+    //  - the kernel runtime executor (artifactId carries the -30-8 suffix)
+    //  - Groovy: the dynamic path generates & executes Groovy at runtime
+    runtimeOnly "com.mgmtp.a12.kernel:kernel-core-runtime-30-8:${kernelVersion}"
+    runtimeOnly "org.codehaus.groovy:groovy:${groovyVersion}"
+
+    // friendlier logging than the SLF4J no-op
+    runtimeOnly 'org.slf4j:slf4j-simple:2.0.17'
+}
+
+// Two entry points reflecting real kernel usage: author models upfront (BuilderMain),
+// then load + validate them later/elsewhere (ValidatorMain).
+application {
+    mainClass = 'com.example.a12demo.purchaseorder.ValidatorMain'   // `gradle run` == validate
+}
+
+def quietLogging = { it.systemProperty 'org.slf4j.simpleLogger.defaultLogLevel', 'warn' }
+
+tasks.named('run', quietLogging)
+
+tasks.register('buildModels', JavaExec) {
+    group = 'a12-demo'
+    description = 'Build the DocumentModel + sample documents and write them to output/ (reusable artifacts).'
+    classpath = sourceSets.main.runtimeClasspath
+    mainClass = 'com.example.a12demo.purchaseorder.BuilderMain'
+    quietLogging(it)
+}
+
+tasks.register('validate', JavaExec) {
+    group = 'a12-demo'
+    description = 'Load the model + documents from output/ and run validation.'
+    classpath = sourceSets.main.runtimeClasspath
+    mainClass = 'com.example.a12demo.purchaseorder.ValidatorMain'
+    quietLogging(it)
+    mustRunAfter 'buildModels'
+}
+
+tasks.register('demo') {
+    group = 'a12-demo'
+    description = 'Convenience: buildModels then validate.'
+    dependsOn 'buildModels', 'validate'
+}
+
+// Feature-showcase demos: one self-contained runnable Main per kernel feature area.
+def showcases = [
+    iteration  : ['com.example.a12demo.IterationDemo',   'Structural rules over a repeating group (uniqueness, Σ, filtered Σ).'],
+    computation: ['com.example.a12demo.ComputationDemo',  'Computed/derived fields: line totals + tiered discount, read back.'],
+    dsltour    : ['com.example.a12demo.DslTourDemo',      'A tour of single-field DSL rules (length, regex, dates, enums, ...).'],
+    extension  : ['com.example.a12demo.ExtensionDemo',    'Custom condition + custom field validator + rich result/label APIs.'],
+    codegen    : ['com.example.a12demo.CodegenDemo',      'Compile a model to standalone Java / JS validation code (ZIP).'],
+    docapi     : ['com.example.a12demo.DocumentApiDemo',  'Immutable DocumentV2: structural sharing, auto-vivify, diff, DM-aware coercion.'],
+    partial    : ['com.example.a12demo.PartialValidationDemo', 'Incremental/wizard validation: validatePart vs validateFull.'],
+    crossarray : ['com.example.a12demo.CrossArrayDemo',   'Cross-array logic: parallel iteration, correlated filter, order, semantic index.'],
+    language   : ['com.example.a12demo.LanguageDemo',     'Language surprises: self-validating computations, enum categories, Valid().'],
+]
+showcases.each { name, spec ->
+    tasks.register("run${name.capitalize()}", JavaExec) {
+        group = 'a12-showcase'
+        description = spec[1]
+        classpath = sourceSets.main.runtimeClasspath
+        mainClass = spec[0]
+        quietLogging(it)
+    }
+}
+tasks.register('showcases') {
+    group = 'a12-showcase'
+    description = 'Run every feature-showcase demo in sequence.'
+    dependsOn showcases.keySet().collect { "run${it.capitalize()}" }
+}
+
+// Promote the built models + documents from output/ (git-ignored) into the committed examples/
+// directory, so readers can browse them on GitHub. Preserves the per-model folder structure and
+// copies only *.json (models + documents) — the binary code-gen ZIPs under <model>/generated/ are
+// not .json so they are skipped. See CLAUDE.md.
+tasks.register('refreshExamples', Copy) {
+    group = 'a12-demo'
+    description = 'Copy built models + documents (output/**/*.json) into the committed examples/ for GitHub browsing.'
+    from('output') { include '**/*.json' }
+    into 'examples'
+}
+
+// ---------------------------------------------------------------------------------------------------
+// Typed accessors (ISOLATED): build-time codegen of compile-time-typed "overlay" views over a model.
+// Kept in its own source set so the nine main demos compile/run independently — a generator failure
+// here can never break the rest of the build. See SHOWCASE.md.
+// ---------------------------------------------------------------------------------------------------
+def generatedTypingsDir = layout.buildDirectory.dir('generated/typedAccessors')
+
+sourceSets {
+    typedAccessor {
+        java {
+            srcDir 'src/typedAccessor/java'
+            srcDir generatedTypingsDir            // the generated overlay classes
+        }
+        // reuse the main demos' classes (e.g. Demos, SubscriptionModel) and their compile/runtime deps
+        compileClasspath += sourceSets.main.output
+        runtimeClasspath += sourceSets.main.output
+    }
+}
+configurations {
+    typedAccessorGenerator                                   // just the generator CLI fat-jar
+    typedAccessorImplementation.extendsFrom implementation   // inherit the kernel deps the demos use
+    typedAccessorRuntimeOnly.extendsFrom runtimeOnly         // inherit groovy + runtime executor
+}
+dependencies {
+    typedAccessorGenerator "com.mgmtp.a12.kernel:kernel-md-typed-accessor-gen:${kernelVersion}:TypedAccessorGenerator-CLI"
+    // generated overlay classes reference kernel-md-document-v2 internals at compile time:
+    typedAccessorImplementation "com.mgmtp.a12.kernel:kernel-md-document-v2:${kernelVersion}"
+}
+
+// (Re)generate the committed model JSON the generator reads.
+tasks.register('genSubscriptionModel', JavaExec) {
+    group = 'a12-showcase'
+    description = 'Serialize SubscriptionModel to src/main/resources/models/subscription.dm.json (generator input).'
+    classpath = sourceSets.main.runtimeClasspath
+    mainClass = 'com.example.a12demo.SubscriptionModelWriter'
+    quietLogging(it)
+}
+
+// Run the typed-accessor generator over that model JSON, emitting overlay sources into the build dir.
+tasks.register('genTypedAccessors', JavaExec) {
+    group = 'a12-showcase'
+    description = 'Generate typed-overlay accessor classes for the subscription model.'
+    def modelJson = file('src/main/resources/models/subscription.dm.json')
+    classpath = configurations.typedAccessorGenerator
+    mainClass = 'com.mgmtp.a12.kernel.md.document.typed_accessor_gen.TypedAccessorGenerator'
+    inputs.file(modelJson)
+    outputs.dir(generatedTypingsDir)
+    doFirst { generatedTypingsDir.get().asFile.mkdirs() }
+    args '--document-model-file', modelJson,
+         '--package-prefix', 'com.example.a12demo.typed',
+         '--output-dir', generatedTypingsDir.get().asFile,
+         '--mode', 'overlay'
+}
+tasks.named('compileTypedAccessorJava') { dependsOn 'genTypedAccessors' }
+
+tasks.register('runTyped', JavaExec) {
+    group = 'a12-showcase'
+    description = 'Typed-accessor overlay views: compile-time-typed, autocompleting document access.'
+    classpath = sourceSets.typedAccessor.runtimeClasspath
+    mainClass = 'com.example.a12demo.TypedAccessorDemo'
+    quietLogging(it)
+}
