@@ -105,7 +105,7 @@ The terms you'll meet reading this demo, [`SHOWCASE.md`](./SHOWCASE.md), and the
 - **Dynamic vs static code generation** — *dynamic* (this demo): the kernel generates + compiles validation code on first use and caches it. *Static*: pre-generate the code at build time and ship it.
 
   *Generating standalone code is shown in `CodegenDemo`.*  ·  *Docs:* Developer guide → *Getting started* and *Architecture*
-- **Groovy (runtime)** — the dynamic path generates server-side validation code as Groovy, so Groovy must be on the runtime classpath.
+- **Groovy (runtime)** — the dynamic path generates server-side validation code as Groovy, so Groovy must be on the runtime classpath (`kernel-md-facade` brings it at runtime scope).
 
   *Docs:* Developer guide → *Architecture*
 
@@ -135,7 +135,7 @@ The terms you'll meet reading this demo, [`SHOWCASE.md`](./SHOWCASE.md), and the
 - **Typed accessors (overlay)** — generated, compile-time-typed view/pointer classes for a specific model, so navigating a document is autocompleted and DM drift becomes a compile error.
 
   *Shown in* `TypedAccessorDemo`  ·  *Docs:* Developer guide → *Typed Accessor Classes for Compile-Time Type Checks*
-- **Mapping / structural mapping** — transferring data between models, with per-field provenance. (Not built in this demo's setup.)
+- **Mapping / structural mapping** — transferring data between models, with per-field provenance. (Built by the 2026.06 bootstrap and reachable through `kernel-md-facade`, but not demoed here.)
 
   *Docs:* Developer guide → *Mapping*
 - **Model migration** — upgrading older DocumentModel JSON to the version your kernel supports (the DM JSON format is versioned independently of the kernel).
@@ -159,10 +159,10 @@ See [`KERNEL-SEMANTICS.md`](./KERNEL-SEMANTICS.md) for these and the rest — Bo
 
 - **`internal` / `a12internal` tier** — kernel API packages that are *not* part of the supported public contract (they can change between versions). This demo touches them only to *build* models in code; the consumption path is pure public API. See [`SHOWCASE.md`](./SHOWCASE.md) §0 and [`KERNEL-DEV-GUIDE.md`](./KERNEL-DEV-GUIDE.md).
 - **`betterbuilders`** — the internal-tier fluent builder API (`DocumentModelBuilder`, `FieldBuilder`, `RuleBuilder`, …) used here to assemble a model in Java. (There is no *public* in-code model builder; the public alternative is authoring the model as JSON.)
-- **`kernel-md-*` / `kernel-rt-*` / `kernel-tool-*` (the module families)** — the abbreviations in the artifact names: **`md`** = *model & document* (the model/document API — the consumer front door), **`rt`** = *runtime* (executes the generated validation/computation code), **`tool`** = *compile-time tooling* (parses the DSL and generates code). The pipeline is `tool` → `md` → `rt`.
+- **`kernel-md-*` / `kernel-rt-*` / `kernel-tool-*` (the module families)** — the abbreviations in the artifact names: **`md`** = *model & document* (the model/document API — the consumer front door), **`rt`** = *runtime* (executes the generated validation/computation code), **`tool`** = *compile-time tooling* (parses the DSL and generates code). The pipeline is `tool` → `md` → `rt`. Since kernel 31 most of these are published as **`kernel-internal-*`** artifacts (e.g. `kernel-internal-core-parser`), which are implementation details reached only through `kernel-md-facade`.
 
   *Docs:* Developer guide → *Architecture*
-- **`kernel-md-facade`** — the single public entry-point artifact a consumer depends on (`md` = model & document, per above); it transitively pulls in model/runtime/serializer.
+- **`kernel-md-facade`** — the single public entry-point artifact a consumer depends on (`md` = model & document, per above); it exports model/runtime/serializer and, since kernel 31, absorbs the former `kernel-md-model`, `kernel-md-a12internal`, and `kernel-md-typed-accessor-gen` modules (the typed-accessor generator is now its `typed-accessor-gen-cli` classifier jar).
 - **`mavenLocal` / the bootstrap** — the kernel's source is public (on GitHub) but its prebuilt artifacts aren't published to a public Maven repository, so the [`a12-kernel-bootstrap`](https://github.com/mbackschat/a12-kernel-bootstrap) kit builds them from those open-source repositories and publishes them to your local Maven repo (`~/.m2`). See [`README.md`](./README.md) → Setup and the [`a12-kernel-bootstrap` README](https://github.com/mbackschat/a12-kernel-bootstrap#readme).
 
 ---

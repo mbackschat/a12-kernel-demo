@@ -328,7 +328,7 @@ byte[] javaZip = svc.generateValidationCode(model, () -> ProgrammingLanguage.JAV
 byte[] jsZip   = svc.generateValidationCode(model, jsConfig /* JAVASCRIPT + WRAPPED_IN_FUNCTION_EXTENDED */, null, notes::add);
 ```
 
-Each call returns a ZIP. The Java target is a package of sources plus a Gradle build; the JS target is a `.js` validator with a `.d.ts` typings file (the enum is `JAVASCRIPT`, not `TYPESCRIPT`). `gradle runCodegen` writes both ZIPs to `output/iteration/generated/` (it reuses `IterationDemo`'s model) and lists their entries; compiling/running the generated code is a separate step. The significance for an evaluator: a single business-analyst-authored rule-set becomes a backend validator *and* a matching frontend validator with identical semantics — no library here is multi-language (JSON Schema is portable data, but you still need a different validator engine per language and lose parity as soon as custom keywords appear).
+Each call returns a ZIP. The Java target is a self-contained Gradle project — sources under `src/main/java/`, a `settings.gradle`, and a `build.gradle` depending on the matching runtime executor (`kernel-core-runtime-31-1:31.1.+`; the generated code imports that version's `_31_1` packages, which is why static code must match the runtime version); the JS target is a `.js` validator with a `.d.ts` typings file (the enum is `JAVASCRIPT`, not `TYPESCRIPT`). `gradle runCodegen` writes both ZIPs to `output/iteration/generated/` (it reuses `IterationDemo`'s model) and lists their entries; compiling/running the generated code is a separate step. The significance for an evaluator: a single business-analyst-authored rule-set becomes a backend validator *and* a matching frontend validator with identical semantics — no library here is multi-language (JSON Schema is portable data, but you still need a different validator engine per language and lose parity as soon as custom keywords appear).
 
 **Docs.**
 
@@ -357,7 +357,7 @@ for (var addon : view.subscription().addons()) {     // List<Addons>, strongly t
 }
 ```
 
-**How it's wired (and why it's safe).** The generator is the `kernel-md-typed-accessor-gen` CLI, run by an **isolated** Gradle task (`genTypedAccessors`) over a committed model JSON (`src/main/resources/models/subscription.dm.json`, produced by `genSubscriptionModel`). The generated classes + the demo live in their own `typedAccessor` source set, so the other demos compile and run completely independently — a codegen failure can't break the rest of the build. (This is the one feature that needs build-time code generation; everything else here is pure runtime.)
+**How it's wired (and why it's safe).** The generator is the `typed-accessor-gen-cli` classifier jar of `kernel-md-facade` (a self-contained CLI; before kernel 31 it was the separate `kernel-md-typed-accessor-gen` artifact), run by an **isolated** Gradle task (`genTypedAccessors`) over a committed model JSON (`src/main/resources/models/subscription.dm.json`, produced by `genSubscriptionModel`). The generated classes + the demo live in their own `typedAccessor` source set, so the other demos compile and run completely independently — a codegen failure can't break the rest of the build. (This is the one feature that needs build-time code generation; everything else here is pure runtime.)
 
 **Docs.** Developer guide → *Typed Accessor Classes for Compile-Time Type Checks* (overlay mode).
 
@@ -385,7 +385,7 @@ These are real, documented kernel capabilities we deliberately did **not** demo 
 
 - **Imprecise / partially-known dates** — `DateFragment` (e.g. `YYYY`, `MM-DD`), date precision (`DAY_OPTIONAL`), `ValueAsDate(F, LastDay)`, and a model-level `BaseYear`. No mainstream library can represent "born in February, day unknown." *Why not here:* the docs state these field types are import-only (not creatable via the builder this demo uses).
 - **Date-range overlap** — a `DateRange` field type plus `DateRangesOverlap(...)` to detect overlapping intervals across rows (e.g. double-booked periods) in one line. *Why not here:* needs the `DateRange` field type, which the builder may not expose.
-- **Mapping with provenance** — `IMappingService.transferData(...)` transfers data between models and returns which source field produced each target value (data lineage). *Why not here:* the structural-mapping subtree isn't built in this OSS setup.
-- **Model migration & modular models** — versioned DM JSON migrated forward by `IDocumentModelMigrator`; models composed from includes/type-definitions and `expand`-ed into a self-contained DM. Both work in Java but need a stale or multi-file model to be worth showing.
+- **Mapping with provenance** — `IMappingService.transferData(...)` transfers data between models and returns which source field produced each target value (data lineage). *Why not here:* it needs a second, target model and a mapping model; the 2026.06 bootstrap builds the structural-mapping modules (and functionally checks them), and `kernel-md-facade` exposes them.
+- **Model migration & modular models** — versioned DM JSON migrated forward by `IDocumentModelMigrator` (this repo's `examples/` went from format `28.4.0` to `29.4.0` with the kernel 31 upgrade); models composed from includes/type-definitions. Since kernel 31 expanding such a model into a self-contained DM is the job of *A12 Workspace Conversion* (`IDocumentModelService#expand` was removed). Both need a stale or multi-file model to be worth showing.
 
 For the full surface, see the A12 docs & forum: https://geta12.com/#/docs

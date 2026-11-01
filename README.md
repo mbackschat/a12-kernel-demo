@@ -47,47 +47,50 @@ Defined in [`PurchaseOrderModel.java`](src/main/java/com/example/a12demo/purchas
 
 ## Setup (one-time)
 
-> ⚠️ **Java only — TypeScript is not wired up yet.** The [`a12-kernel-bootstrap`](https://github.com/mbackschat/a12-kernel-bootstrap) kit builds and publishes only the kernel's **Java** artifacts. The kernel's TypeScript packages (`@com.mgmtp.a12.kernel/*`) and their `@com.mgmtp.a12.utils/*` / devtools npm dependencies are **not** built — wiring up the TS side (e.g. via a local npm registry) is an open task.
+> ⚠️ **Java only — TypeScript is not wired up.** The [`a12-kernel-bootstrap`](https://github.com/mbackschat/a12-kernel-bootstrap) kit builds the kernel's TypeScript packages (`@com.mgmtp.a12.kernel/*`) too, but keeps them as npm tarballs in its own state directory and installs them nowhere npm consumers would find them. Only the **Java** artifacts land in `~/.m2`, and this demo uses only those.
 
-The kernel and its A12 dependencies must be in your **local Maven repo** (`~/.m2`); their prebuilt **artifacts aren't published to a public Maven repository** (the source is public on GitHub). The separate **[`a12-kernel-bootstrap`](https://github.com/mbackschat/a12-kernel-bootstrap)** kit clones the needed repos from public GitHub, applies the required (Java-only) patches, and publishes everything to `mavenLocal`. Clone it **next to this demo** (so its default `A12_ROOT` is the shared parent directory) and run it:
+The kernel and its A12 dependencies must be in your **local Maven repo** (`~/.m2`); their prebuilt **artifacts aren't published to a public Maven repository** (the source is public on GitHub). The separate **[`a12-kernel-bootstrap`](https://github.com/mbackschat/a12-kernel-bootstrap)** kit builds the release from **pinned public commits**, verifies it, and then installs its Maven artifacts into `~/.m2`. Clone it **next to this demo**, check the toolchain, and run it:
 
 ```sh
-ROOT="$HOME/oss/a12"                                                          # the shared parent dir (adjust to your checkout)
+ROOT="$HOME/oss/a12"                                          # the shared parent dir (adjust to your checkout)
 git clone https://github.com/mbackschat/a12-kernel-bootstrap "$ROOT/a12-kernel-bootstrap"
-"$ROOT/a12-kernel-bootstrap/bootstrap.sh"                                     # clone A12 repos -> patch -> publish to mavenLocal
+"$ROOT/a12-kernel-bootstrap/bootstrap.sh" --doctor            # reports each prerequisite as OK or MISSING
+"$ROOT/a12-kernel-bootstrap/bootstrap.sh"                     # build + verify -> install into ~/.m2
 ```
 
-See the **[`a12-kernel-bootstrap` README](https://github.com/mbackschat/a12-kernel-bootstrap#readme)** for exactly what it does, **why the patches are needed**, the env-var overrides, and prerequisites: **JDK 21** (runs Gradle), **a JDK 25** (one build-time plugin's toolchain), **git/curl/unzip**, and **Node/npm** (only for the publish step). It pins **Gradle 9.0.0** (9.5.1 is incompatible with the kernel-mm build).
+- **Prerequisites:** **JDK 21 and JDK 25** (the base modules need 25; the kernel targets 21), **Node.js 24** with npm, **Python 3.12+**, and **Git**. `--doctor` checks them without building anything and suggests fixes.
+- **Gradle 9.8.2** is downloaded and checked against its published SHA-256 by the kit itself; you don't install it.
+- **State** (sources, logs, the downloaded Gradle) lives in `$ROOT/.a12-bootstrap/2026.06-ext1` by default.
+- **Install into `~/.m2`** happens only after a successful, verified build. It follows `publishToMavenLocal` semantics: this release's coordinates are replaced, every other version (e.g. 2025.06-ext5) is left in place.
+
+See the **[`a12-kernel-bootstrap` README](https://github.com/mbackschat/a12-kernel-bootstrap#readme)** for what it builds, how it verifies the result, and its env-var overrides.
 
 ## Compatibility — kernel versions
 
-This demo is built and verified against the **2025.06-ext5 / kernel 30.8.1** A12 release line:
+This demo is built and verified against the **2026.06-ext1 / kernel 31.1.1** A12 release line:
 
 | Artifact | Version |
 |---|---|
-| A12 kernel (`com.mgmtp.a12.kernel:*`) | **30.8.1** |
-| `a12-base` (`com.mgmtp.a12.base:*`) | **29.3.0** |
-| `kernel-core-runtime-api` | 32.3.4 |
-| `kernel-core-customfieldtype-api` | 28.2.0 |
+| A12 kernel (`com.mgmtp.a12.kernel:*`) | **31.1.1** |
+| `a12-base` (`com.mgmtp.a12.base:*`) | **30.0.2** |
+| `kernel-core-runtime-api` | 33.0.2 |
+| `kernel-core-customfieldtype-api` | 29.0.2 |
 | Groovy (runtime, dynamic path) | 3.0.25 |
-| JDK / Gradle | 21 / 9.0.0 |
+| JDK / Gradle | 21 / 9.8.2 |
 
-These are pinned in [`build.gradle`](./build.gradle); after setup, `mavenLocal` holds exactly these. The [`a12-kernel-bootstrap`](https://github.com/mbackschat/a12-kernel-bootstrap) kit builds the kernel **from source** out of the OSS sibling repos — and since it clones each repo's *default branch*, a repo that has moved past this release can publish a **different** version than the demo pins. So the script:
+[`build.gradle`](./build.gradle) pins only the kernel version, on its single kernel dependency `kernel-md-facade`; the other versions follow from the facade's published metadata. The kit builds exactly this release from the commits recorded in its release manifest, so `~/.m2` receives these versions and no others; the **artifact versions above are the contract**.
 
-- **warns** (without failing) if the kernel version it published to `mavenLocal` isn't `30.8.1`, and
-- on any failure, **hints** that a version mismatch is a likely cause.
-
-If you hit a mismatch, build the `a12-kernel` / `a12-kernel-mm` release matching `30.8.1` (e.g. check out that release tag/commit before running the bootstrap), or bump the pins in `build.gradle` to the version that was actually published. The exact git commits aren't pinned here because the OSS mirrors are rebuilt from source; the **artifact versions above are the contract**.
+Because `~/.m2` keeps older releases side by side, a stale coordinate does not fail the build — it silently resolves the old jar. Kernel 31 folded several former modules (`kernel-md-model`, `kernel-md-a12internal`, `kernel-md-typed-accessor-gen`, …) into `kernel-md-facade`; their 30.8.1 jars stay in `~/.m2`, so when adapting another project, check its dependency report for leftover 30.8.1 / 29.3.0 entries.
 
 ## Build & run
 
-The demo is Java-only (no Node needed to run it). Use a clean/isolated Gradle home so no private repository is picked up — the demo's `build.gradle` declares only `mavenLocal()` + `mavenCentral()`:
+The demo is Java-only (no Node needed to run it). The demo's `build.gradle` declares only `mavenLocal()` + `mavenCentral()`; run it with a fresh Gradle home (one without init scripts) so a global init script can't add a private repository:
 
 ```sh
-ROOT="$HOME/oss/a12"                                 # parent of a12-kernel / a12-kernel-demo (adjust to your checkout)
-export GRADLE_USER_HOME="$ROOT/.gradle-isolated"     # public-repos-only init
-export JAVA_HOME="$(/usr/libexec/java_home -v 21)"   # macOS; or point at any JDK 21
-GRADLE="$ROOT/.gradle-dist/gradle-9.0.0/bin/gradle"  # the Gradle the setup downloaded
+ROOT="$HOME/oss/a12"                                                    # parent of a12-kernel-bootstrap / a12-kernel-demo (adjust to your checkout)
+export GRADLE_USER_HOME="$ROOT/.gradle-demo"                            # any directory without init scripts
+export JAVA_HOME="$(/usr/libexec/java_home -v 21)"                      # macOS; or point at any JDK 21
+GRADLE="$ROOT/.a12-bootstrap/2026.06-ext1/tools/gradle-9.8.2/bin/gradle"  # the Gradle the kit downloaded
 
 "$GRADLE" -p "$ROOT/a12-kernel-demo" --no-daemon buildModels   # phase 1: author + persist the model & documents
 "$GRADLE" -p "$ROOT/a12-kernel-demo" --no-daemon validate      # phase 2: load from output/ and validate
@@ -95,7 +98,7 @@ GRADLE="$ROOT/.gradle-dist/gradle-9.0.0/bin/gradle"  # the Gradle the setup down
 "$GRADLE" -p "$ROOT/a12-kernel-demo" --no-daemon demo
 ```
 
-`validate` (also the default `run` task) loads whatever is already in `output/`, so once the model is built you can re-validate repeatedly without rebuilding it. (If your default `gradle`/JDK already resolve from public repos on JDK 21, plain `gradle buildModels` / `gradle validate` work too.) The `a12-kernel-bootstrap` kit prints a ready-to-paste run command at the end (set `A12_CONSUMER_DIR` to this demo's path to have it filled in for you).
+`validate` (also the default `run` task) loads whatever is already in `output/`, so once the model is built you can re-validate repeatedly without rebuilding it. (If your default `gradle`/JDK already resolve from public repos on JDK 21, plain `gradle buildModels` / `gradle validate` work too.)
 
 ## Expected output
 
