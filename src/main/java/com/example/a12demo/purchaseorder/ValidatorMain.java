@@ -60,7 +60,6 @@ public class ValidatorMain {
         };
         IDocumentDynamicServiceConfig serviceConfig = new IDocumentDynamicServiceConfig() {
             @Override public IModelCodeCache getCache() { return cache; }
-            @Override public Optional<String> getVariant() { return Optional.empty(); }
             @Override public Optional<ILabelProvider> getLabelProvider() { return Optional.empty(); }
         };
         IDocumentRtService rt = new DocumentRtServiceFactory(resolver).createDocumentRtService(serviceConfig);

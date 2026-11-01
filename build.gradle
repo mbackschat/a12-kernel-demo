@@ -17,30 +17,17 @@ java {
     }
 }
 
-def kernelVersion = '30.8.1'
-def baseVersion   = '29.3.0'
-def groovyVersion = '3.0.25'
+def kernelVersion = '31.1.1'
 
 dependencies {
-    // Single consumer entry point — transitively pulls model/runtime/serializer/document-v2/
-    // runtime-api/base-model-api/customfieldtype-api/conversion/commons etc.
+    // Single consumer entry point. Since kernel 31 the facade exports, at compile scope (POM and Gradle
+    // module metadata agree), everything the demo compiles against:
+    //   com.mgmtp.a12.kernel.md.model.internal.betterbuilders.*            -> kernel-internal-md-model
+    //   com.mgmtp.a12.kernel.md.model.a12internal.{DocumentModel,Field,...} -> kernel-md-documentmodel
+    //   com.mgmtp.a12.kernel.md.serializer.model.a12internal.services.*     -> kernel-md-serializer
+    // plus the runtime executor (kernel-core-runtime-31-1) and, at runtime scope, Groovy for the dynamic
+    // validation path. Declaring any of them again would only duplicate a version pin.
     implementation "com.mgmtp.a12.kernel:kernel-md-facade:${kernelVersion}"
-
-    // The facade pulls these only at runtime; we need them on the COMPILE classpath because the demo
-    // builds the model with the (A12-internal-tier) builder API:
-    //   com.mgmtp.a12.kernel.md.model.internal.betterbuilders.*   -> kernel-md-model
-    //   com.mgmtp.a12.kernel.md.model.a12internal.{DocumentModel,Field,Rule,...} -> kernel-md-a12internal
-    implementation "com.mgmtp.a12.kernel:kernel-md-model:${kernelVersion}"
-    implementation "com.mgmtp.a12.kernel:kernel-md-a12internal:${kernelVersion}"
-    // for the a12internal DocumentModelSerializer: serialize the built model to canonical DM JSON
-    // (review file) and bridge it to the public IDocumentModel
-    implementation "com.mgmtp.a12.kernel:kernel-md-serializer:${kernelVersion}"
-
-    // Runtime needs (dynamic validation path):
-    //  - the kernel runtime executor (artifactId carries the -30-8 suffix)
-    //  - Groovy: the dynamic path generates & executes Groovy at runtime
-    runtimeOnly "com.mgmtp.a12.kernel:kernel-core-runtime-30-8:${kernelVersion}"
-    runtimeOnly "org.codehaus.groovy:groovy:${groovyVersion}"
 
     // friendlier logging than the SLF4J no-op
     runtimeOnly 'org.slf4j:slf4j-simple:2.0.17'
@@ -136,14 +123,16 @@ sourceSets {
     }
 }
 configurations {
-    typedAccessorGenerator                                   // just the generator CLI fat-jar
+    // just the generator CLI fat-jar: the classifier jar is self-contained, so the facade's own
+    // dependencies must not be resolved onto the generator's classpath
+    typedAccessorGenerator { transitive = false }
     typedAccessorImplementation.extendsFrom implementation   // inherit the kernel deps the demos use
-    typedAccessorRuntimeOnly.extendsFrom runtimeOnly         // inherit groovy + runtime executor
+    typedAccessorRuntimeOnly.extendsFrom runtimeOnly         // inherit the SLF4J binding
 }
 dependencies {
-    typedAccessorGenerator "com.mgmtp.a12.kernel:kernel-md-typed-accessor-gen:${kernelVersion}:TypedAccessorGenerator-CLI"
-    // generated overlay classes reference kernel-md-document-v2 internals at compile time:
-    typedAccessorImplementation "com.mgmtp.a12.kernel:kernel-md-document-v2:${kernelVersion}"
+    typedAccessorGenerator "com.mgmtp.a12.kernel:kernel-md-facade:${kernelVersion}:typed-accessor-gen-cli"
+    // the generated overlay classes compile against kernel-md-document-v2, which the inherited facade
+    // dependency already exports
 }
 
 // (Re)generate the committed model JSON the generator reads.
@@ -167,8 +156,7 @@ tasks.register('genTypedAccessors', JavaExec) {
     doFirst { generatedTypingsDir.get().asFile.mkdirs() }
     args '--document-model-file', modelJson,
          '--package-prefix', 'com.example.a12demo.typed',
-         '--output-dir', generatedTypingsDir.get().asFile,
-         '--mode', 'overlay'
+         '--output-dir', generatedTypingsDir.get().asFile
 }
 tasks.named('compileTypedAccessorJava') { dependsOn 'genTypedAccessors' }
 

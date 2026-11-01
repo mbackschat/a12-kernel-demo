@@ -112,7 +112,6 @@ final class Demos {
         };
         IDocumentDynamicServiceConfig serviceConfig = new IDocumentDynamicServiceConfig() {
             @Override public IModelCodeCache getCache() { return cache; }
-            @Override public Optional<String> getVariant() { return Optional.empty(); }
             @Override public Optional<ILabelProvider> getLabelProvider() { return Optional.empty(); }
         };
         return new DocumentRtServiceFactory(resolver).createDocumentRtService(serviceConfig);
