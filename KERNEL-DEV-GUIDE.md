@@ -2,7 +2,7 @@
 
 A developer-level walkthrough of how the A12 Kernel turns a **DocumentModel + validation rules** into the **errors and warnings** this demo prints. Read [`README.md`](./README.md) first for how to set up and run it.
 
-> ⚠️ **Java only.** The kernel also ships a parallel **TypeScript** runtime (`@com.mgmtp.a12.kernel/*`). The [`a12-kernel-bootstrap`](https://github.com/mbackschat/a12-kernel-bootstrap) kit builds those packages as npm tarballs, but installs only the **Java** artifacts (into `~/.m2`), and this demo uses only those. Everything below describes the **Java** path.
+> ⚠️ **Java only.** The kernel also has a TypeScript runtime (`@com.mgmtp.a12.kernel/*`). The [`a12-kernel-bootstrap`](https://github.com/mbackschat/a12-kernel-bootstrap) kit builds it, but installs only the Java artifacts, and this guide covers only the Java path.
 
 ## 1. The mental model
 
@@ -52,7 +52,9 @@ Two distinct kinds of message come out of ④:
 - **Rule errors/warnings** — your DSL rules. When a condition is `true`, the kernel emits a message carrying that rule's `errorCode`, `severity`, and **rendered** `errorMessage` (any `$Field.value$`/`$Field$` parameters substituted), plus a pointer to the error field.
 - **Formal errors** — built-in field-type constraints, independent of your rules (error code like `zahlHatDezimalTrenner`, rule path `formalePruefung`). The demo deliberately runs into one: a `NumberType` defaults to *integers only*, so a price of `9.99` would be a formal error — which is why `PurchaseOrderModel` sets `maxFractionalDigits(2)` on `UnitPrice`.
 
-The pipeline stages live in the `kernel-tool/*` (parse + codegen) and `kernel-rt/*` (runtime) source groups; the model/Document API and the `validateFull` entry point are in `kernel-md/*`. Since kernel 31 most of these are published as `kernel-internal-*` artifacts that you never depend on directly: `kernel-md-facade` pulls them in (only the runtime executor keeps its versioned name, e.g. `kernel-core-runtime-31-1`).
+In the kernel's source tree, parsing and code generation live under `kernel-tool/`, the runtime under `kernel-rt/`, and the model and Document API, including `validateFull`, under `kernel-md/`.
+
+You never depend on these modules directly. Since kernel 31 most of them are published as `kernel-internal-*` artifacts, and `kernel-md-facade` pulls them in for you. The runtime executor is the exception: its name carries the kernel version, for example `kernel-core-runtime-31-1`.
 
 ## 4. The two demo phases, in kernel terms
 
@@ -104,7 +106,7 @@ A `DocumentV2` is the immutable data the kernel validates. In production it usua
 
 A real consumer needs far less than this demo's two-phase scaffolding. The minimal shape:
 
-1. **Depend on one artifact** — `com.mgmtp.a12.kernel:kernel-md-facade`. Since kernel 31 it is the only supported entry point: it exports the model, Document, runtime, and serializer APIs at compile scope and brings Groovy at runtime scope for the dynamic path. The former standalone modules (`kernel-md-model`, `kernel-md-runtime-api`, …) are no longer published for direct use.
+1. **Depend on one artifact** — `com.mgmtp.a12.kernel:kernel-md-facade`. It gives your code the model, Document, runtime, and serializer APIs, and it adds Groovy to the runtime classpath for the dynamic path. Since kernel 31 it's the only supported entry point; modules you may know from older releases, such as `kernel-md-model` or `kernel-md-runtime-api`, are no longer meant for direct use.
 2. **Author the model as JSON**, not in code — hand-written or exported once (this demo's `examples/*/*.dm.json` are exactly such artifacts) — and load it with the public `new DocumentModelServiceFactory().createDocumentModelSerializer().deserialize(reader)`. No internal-tier import then appears anywhere in your code (see §4's good-citizen note).
 3. **Wire the runtime once** and reuse it:
 

@@ -43,7 +43,7 @@ A DocumentModel has two top-level parts, `header` and `content`.
 ```
 
 - **`id`** — how Documents reference this model, and how the runtime's model resolver looks it up.
-- **`modelVersion`** — the DocumentModel *format* version the serializer wrote: kernel 31.1.1 writes `29.4.0`. Models in an older format are migrated automatically when loaded (the 2025.06 kernel wrote `28.4.0`; for these models the migrations in between change nothing but this number).
+- **`modelVersion`** — the version of the DocumentModel *file format*, not of your model. Kernel 31.1.1 writes `29.4.0`; the 2025.06 kernel wrote `28.4.0`. When the kernel loads a model in an older format, it migrates it automatically. For the models in this folder, that migration changes nothing except this number.
 - **`locales`** — the languages the model declares. This matters at runtime: you must validate with a locale the model supports (the demo uses `Locale.US`). Error messages (below) are keyed by these locale codes.
 
 ### `content.modelConfig` — how values and conditions are interpreted

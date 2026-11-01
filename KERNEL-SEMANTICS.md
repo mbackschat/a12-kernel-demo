@@ -15,7 +15,7 @@ For the vocabulary used here, see [`KERNEL-GLOSSARY.md`](./KERNEL-GLOSSARY.md); 
 
 ## The field types at a glance
 
-Which operators are legal on a field, and how a missing or mismatched value behaves, depends on the field's **type** — so the type model is worth holding in mind before the per-topic rules below. The kernel defines these field types (the interface names are the public `com.mgmtp.a12.kernel.md.model.api.fieldtypes.I*Type`, shipped in `kernel-md-documentmodel` since kernel 31):
+Which operators are legal on a field, and how a missing or mismatched value behaves, depends on the field's **type** — so the type model is worth holding in mind before the per-topic rules below. The kernel defines these field types (in Java, each has a public interface `com.mgmtp.a12.kernel.md.model.api.fieldtypes.I*Type`):
 
 | Field type | Variants / key config | `[Field]` yields | Special meaning for evaluation |
 |---|---|---|---|
@@ -31,9 +31,9 @@ Which operators are legal on a field, and how a missing or mismatched value beha
 | **DateRange** | `format` (`MM` … `yyyy-MM-dd`); separator `/` | date-range | Supports only `==` / `!=` (**no ordering**); cannot be nested in another construct; `DateRangesOverlap` treats endpoints as inclusive. |
 | **Custom** | `name`; min/max length | string-equivalent | Treated as a **string** in rule conditions; `Valid(F, "Name")` / `Invalid(...)` runs the project's registered validator for that custom type. |
 | **TypeDefinition** | references a reusable type definition by id | the underlying type's value | **Delegates** to the referenced type — its legality *is* that underlying type's, and is known only after the model is **expanded** (includes/type-defs resolved). |
-| ~~Unspecified~~ *(removed in kernel 31)* | — | — | Was documented as "not a data type". Kernel 31 dropped it (A12K-3981): loading an older model migrates each `Unspecified` field to a **String** field annotated `_take_reference_configuration`, so it now evaluates like any String. |
+| ~~Unspecified~~ *(removed in kernel 31)* | — | — | No longer exists (A12K-3981). When you load an older model, the kernel converts each `Unspecified` field into a **String** field (annotated `_take_reference_configuration`), so it evaluates like any other String. |
 
-*Reference: Models → Field types; Constants and data types; Operators and language constructs → Comparison operations. Interfaces: `com.mgmtp.a12.kernel.md.model.api.fieldtypes.I*Type` (`kernel-md-documentmodel`). The per-type evaluation details are expanded in the sections below (numbers §5, dates §6, strings §7, enumerations §8).*
+*Reference: Models → Field types; Constants and data types; Operators and language constructs → Comparison operations. Interfaces: `com.mgmtp.a12.kernel.md.model.api.fieldtypes.I*Type`. The per-type evaluation details are expanded in the sections below (numbers §5, dates §6, strings §7, enumerations §8).*
 
 ---
 
@@ -379,7 +379,7 @@ Formal validation is the set of field-type checks the kernel performs automatica
 
 A rule's severity (`ERROR` / `WARNING` / `INFO`) is **metadata on the resulting message**, not part of evaluation — the condition fires identically whatever the severity. Only `ERROR`-severity messages make the document invalid: `IDocumentValidationResult.noErrorOccurred()` returns `true` even when `WARNING`s and `INFO`s are present (it considers only `ERROR`s). So a firing `WARNING` surfaces a message to the user without failing validation — useful for "are you sure?" advisories.
 
-*Reference: Appendix → Validation and formal validation → Errors arising from validation rules; runtime API `IDocumentValidationResult.noErrorOccurred()` (package `com.mgmtp.a12.kernel.md.rt.api`, reached through `kernel-md-facade`).*
+*Reference: Appendix → Validation and formal validation → Errors arising from validation rules; runtime API `IDocumentValidationResult.noErrorOccurred()` (package `com.mgmtp.a12.kernel.md.rt.api`).*
 
 ### Full validation vs. partial validation
 

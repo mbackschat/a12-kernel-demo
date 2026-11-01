@@ -47,27 +47,47 @@ Defined in [`PurchaseOrderModel.java`](src/main/java/com/example/a12demo/purchas
 
 ## Setup (one-time)
 
-> ⚠️ **Java only — TypeScript is not wired up.** The [`a12-kernel-bootstrap`](https://github.com/mbackschat/a12-kernel-bootstrap) kit builds the kernel's TypeScript packages (`@com.mgmtp.a12.kernel/*`) too, but keeps them as npm tarballs in its own state directory and installs them nowhere npm consumers would find them. Only the **Java** artifacts land in `~/.m2`, and this demo uses only those.
+The demo needs the A12 kernel in your local Maven repository (`~/.m2`). The kernel's source code is public on GitHub, but its build artifacts aren't published to any public Maven repository, so you build them yourself with the companion kit, [`a12-kernel-bootstrap`](https://github.com/mbackschat/a12-kernel-bootstrap).
 
-The kernel and its A12 dependencies must be in your **local Maven repo** (`~/.m2`); their prebuilt **artifacts aren't published to a public Maven repository** (the source is public on GitHub). The separate **[`a12-kernel-bootstrap`](https://github.com/mbackschat/a12-kernel-bootstrap)** kit builds the release from **pinned public commits**, verifies it, and then installs its Maven artifacts into `~/.m2`. Clone it **next to this demo**, check the toolchain, and run it:
+The kit builds one A12 release from fixed (pinned) commits of the public repositories, checks the result, and then installs the Java artifacts into `~/.m2`.
+
+### 1. Check the prerequisites
+
+You need:
+
+- JDK 21 and JDK 25 (the A12 base modules build with 25; the kernel itself targets 21)
+- Node.js 24 with npm
+- Python 3.12 or newer
+- Git
+
+You don't need to install Gradle: the kit downloads Gradle 9.8.2 itself and verifies its checksum.
+
+### 2. Clone and run the kit
+
+Clone the kit into the same parent directory as this demo, then run it:
 
 ```sh
-ROOT="$HOME/oss/a12"                                          # the shared parent dir (adjust to your checkout)
+ROOT="$HOME/oss/a12"    # the parent directory of this demo; adjust to your checkout
 git clone https://github.com/mbackschat/a12-kernel-bootstrap "$ROOT/a12-kernel-bootstrap"
-"$ROOT/a12-kernel-bootstrap/bootstrap.sh" --doctor            # reports each prerequisite as OK or MISSING
-"$ROOT/a12-kernel-bootstrap/bootstrap.sh"                     # build + verify -> install into ~/.m2
+"$ROOT/a12-kernel-bootstrap/bootstrap.sh" --doctor    # checks the prerequisites, builds nothing
+"$ROOT/a12-kernel-bootstrap/bootstrap.sh"             # builds, verifies, installs into ~/.m2
 ```
 
-- **Prerequisites:** **JDK 21 and JDK 25** (the base modules need 25; the kernel targets 21), **Node.js 24** with npm, **Python 3.12+**, and **Git**. `--doctor` checks them without building anything and suggests fixes.
-- **Gradle 9.8.2** is downloaded and checked against its published SHA-256 by the kit itself; you don't install it.
-- **State** (sources, logs, the downloaded Gradle) lives in `$ROOT/.a12-bootstrap/2026.06-ext1` by default.
-- **Install into `~/.m2`** happens only after a successful, verified build. It follows `publishToMavenLocal` semantics: this release's coordinates are replaced, every other version (e.g. 2025.06-ext5) is left in place.
+`--doctor` lists each prerequisite as OK or MISSING and suggests a fix for anything that's missing.
 
-See the **[`a12-kernel-bootstrap` README](https://github.com/mbackschat/a12-kernel-bootstrap#readme)** for what it builds, how it verifies the result, and its env-var overrides.
+The kit keeps its working files (sources, logs, and the downloaded Gradle) in `$ROOT/.a12-bootstrap/2026.06-ext1`.
 
-## Compatibility — kernel versions
+### What ends up in `~/.m2`
 
-This demo is built and verified against the **2026.06-ext1 / kernel 31.1.1** A12 release line:
+The kit writes to `~/.m2` only after a successful, verified build. It adds the new release and leaves every other release in place, so older artifacts, such as those of 2025.06, stay available next to 2026.06.
+
+To learn what the kit builds, how it verifies the build, and which environment variables it reads, see the [kit's README](https://github.com/mbackschat/a12-kernel-bootstrap#readme).
+
+> **Java only.** The kit also builds the kernel's TypeScript packages, but it keeps them as npm tarballs in its working directory and doesn't publish them to any npm registry. This demo uses only the Java artifacts.
+
+## Compatibility
+
+This demo is built and tested against A12 release **2026.06-ext1** (kernel 31.1.1). For the previous release, 2025.06-ext5 (kernel 30.8.1), use the `release/2025.06` branch.
 
 | Artifact | Version |
 |---|---|
@@ -78,27 +98,31 @@ This demo is built and verified against the **2026.06-ext1 / kernel 31.1.1** A12
 | Groovy (runtime, dynamic path) | 3.0.25 |
 | JDK / Gradle | 21 / 9.8.2 |
 
-[`build.gradle`](./build.gradle) pins only the kernel version, on its single kernel dependency `kernel-md-facade`; the other versions follow from the facade's published metadata. The kit builds exactly this release from the commits recorded in its release manifest, so `~/.m2` receives these versions and no others; the **artifact versions above are the contract**.
+[`build.gradle`](./build.gradle) declares a single kernel dependency, `kernel-md-facade`, and pins only the kernel version. The facade brings in matching versions of everything else in the table.
 
-Because `~/.m2` keeps older releases side by side, a stale coordinate does not fail the build — it silently resolves the old jar. Kernel 31 folded several former modules (`kernel-md-model`, `kernel-md-a12internal`, `kernel-md-typed-accessor-gen`, …) into `kernel-md-facade`; their 30.8.1 jars stay in `~/.m2`, so when adapting another project, check its dependency report for leftover 30.8.1 / 29.3.0 entries.
+> **Upgrading your own project from 2025.06?** Because `~/.m2` keeps old releases, an outdated dependency doesn't fail the build: Gradle quietly resolves the old jar instead. Kernel 31 merged several modules into `kernel-md-facade`, among them `kernel-md-model`, `kernel-md-a12internal`, and `kernel-md-typed-accessor-gen`. Check your dependency report for leftover 30.8.1 or 29.3.0 entries.
 
 ## Build & run
 
-The demo is Java-only (no Node needed to run it). The demo's `build.gradle` declares only `mavenLocal()` + `mavenCentral()`; run it with a fresh Gradle home (one without init scripts) so a global init script can't add a private repository:
+To run the demo you need only a JDK 21; Node.js isn't required.
+
+Run Gradle with a fresh Gradle home, that is, a directory without init scripts. Gradle then uses only the two repositories that `build.gradle` declares, your local Maven repository and Maven Central, and no global setting can add a private repository.
 
 ```sh
-ROOT="$HOME/oss/a12"                                                    # parent of a12-kernel-bootstrap / a12-kernel-demo (adjust to your checkout)
-export GRADLE_USER_HOME="$ROOT/.gradle-demo"                            # any directory without init scripts
-export JAVA_HOME="$(/usr/libexec/java_home -v 21)"                      # macOS; or point at any JDK 21
-GRADLE="$ROOT/.a12-bootstrap/2026.06-ext1/tools/gradle-9.8.2/bin/gradle"  # the Gradle the kit downloaded
+ROOT="$HOME/oss/a12"                                  # the parent directory of this demo; adjust to your checkout
+export GRADLE_USER_HOME="$ROOT/.gradle-demo"          # any directory without init scripts
+export JAVA_HOME="$(/usr/libexec/java_home -v 21)"    # macOS; elsewhere, point at any JDK 21
+GRADLE="$ROOT/.a12-bootstrap/2026.06-ext1/tools/gradle-9.8.2/bin/gradle"    # the Gradle the kit downloaded
 
-"$GRADLE" -p "$ROOT/a12-kernel-demo" --no-daemon buildModels   # phase 1: author + persist the model & documents
-"$GRADLE" -p "$ROOT/a12-kernel-demo" --no-daemon validate      # phase 2: load from output/ and validate
+"$GRADLE" -p "$ROOT/a12-kernel-demo" --no-daemon buildModels   # phase 1: build the model and documents, save them as JSON
+"$GRADLE" -p "$ROOT/a12-kernel-demo" --no-daemon validate      # phase 2: load them from output/ and validate
 # or both at once:
 "$GRADLE" -p "$ROOT/a12-kernel-demo" --no-daemon demo
 ```
 
-`validate` (also the default `run` task) loads whatever is already in `output/`, so once the model is built you can re-validate repeatedly without rebuilding it. (If your default `gradle`/JDK already resolve from public repos on JDK 21, plain `gradle buildModels` / `gradle validate` work too.)
+`validate` (also the default `run` task) reads whatever is in `output/`. Once you've built the models, you can validate as often as you like without rebuilding them.
+
+If your default `gradle` already uses public repositories only and runs on JDK 21, plain `gradle demo` works too.
 
 ## Expected output
 
