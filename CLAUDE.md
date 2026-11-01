@@ -26,6 +26,10 @@ Any demo that builds a DocumentModel **must serialize the model and all its samp
 
 Those artifacts are then **copied into the committed `examples/` directory** (same per-demo folder structure) so readers can browse the real model/document JSON on GitHub without building anything. Run `gradle refreshExamples` (copies `output/**/*.json` → `examples/`; binary code-gen ZIPs, which live under `output/<demo>/generated/`, are not `.json` and so are skipped). Whenever the set of demos/documents changes, re-run it and **update [`examples/README.md`](examples/README.md)** to describe the new files.
 
+## RULE — write docs for human readers
+
+Write README and every doc with a technical writer's attitude: plain words, short sentences, one idea per paragraph, and numbered steps for procedures. Lead with what the reader needs to do or know; put background, internals, and edge cases after it. Avoid long parentheticals and chains of semicolons or em-dashes. Explain a term on first use or link to [`KERNEL-GLOSSARY.md`](./KERNEL-GLOSSARY.md).
+
 ## RULE — SHOWCASE.md is in-depth
 
 [`SHOWCASE.md`](./SHOWCASE.md) is the deep reference for the feature demos. For each feature it must include: (1) a **code excerpt** from the relevant demo (the rule/condition or API call), (2) a **comprehensive explanation** of what the kernel is doing and why it matters, and (3) a pointer to the **kernel documentation** **by chapter/section title** (e.g. *Validation-Language guide → Operators and language constructs → Functional language constructs*). For *kernel-doc* references use chapter/section titles only — **no file paths and no URLs**. (Linking to this repo's own docs — README, KERNEL-DEV-GUIDE.md, SHOWCASE.md — by relative path is fine.)
