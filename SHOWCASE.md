@@ -7,7 +7,7 @@ Every demo persists its built model and documents to `output/` (git-ignored); th
 - The *Validation-Language guide* ("Kernel Language") — for business analysts.
 - The *Developer guide* ("Kernel") — architecture and the Java/TypeScript APIs.
 
-Since release 2026.06, the Validation-Language guide is published only with the A12 documentation on geta12.com, where it's called the *Kernel Language* documentation. It's no longer part of the public kernel source code.
+The Validation-Language guide is no longer in the public kernel source; see the note in [`KERNEL-GLOSSARY.md`](./KERNEL-GLOSSARY.md).
 
 New to the kernel's vocabulary (DocumentModel, repeating group, the DSL operators, formal validation, …)? Keep [`KERNEL-GLOSSARY.md`](./KERNEL-GLOSSARY.md) open alongside this.
 
@@ -36,7 +36,7 @@ Start with **§0**, the base Purchase-Order demo (the README walks it through en
 
 The base demo is the hello-world: a small Purchase-Order model (a few String/Number/Date/Boolean fields + four plain rules). It's the one the [README](./README.md) walks through end to end (setup → `gradle buildModels` → `gradle validate` → expected output), so this section just places it in context.
 
-It's also the **only two-phase demo**, and that's deliberate: `BuilderMain` (author + persist) and `ValidatorMain` (load + validate) are split to teach the **author-once / validate-often** workflow — models are built and serialized up front, then loaded and validated separately, fully **decoupled** from how they were authored (the validator only consumes JSON via the public API). The ten showcases below are instead **single self-contained `main`s** that build *and* validate inline (via `Demos.check`), to keep each one focused on the single feature it illustrates.
+It's also the **only two-phase demo**, and that's deliberate: `BuilderMain` (author + persist) and `ValidatorMain` (load + validate) are split to teach the **author-once / validate-often** workflow — models are built and serialized up front, then loaded and validated separately, fully **decoupled** from how they were authored (the validator only consumes JSON via the public API). The ten Java showcases below are instead **single self-contained `main`s** that build *and* validate inline (via `Demos.check`), to keep each one focused on the single feature it illustrates. The TypeScript showcase (§11) reads the models they persist.
 
 Run it with `gradle demo` (runs `buildModels` then `validate`).
 
@@ -194,15 +194,15 @@ A few rules apply:
 
 - The path must end in a repeatable group marked with `*`.
 - The term must be numeric. It can't contain `Having`, `CustomCondition`, `RepetitionNotUnique`, or another `SumOfTerms`.
-- An empty number field in a row counts as `0`, as it does in `Sum`. A row with no data at all adds nothing.
+- An empty number field counts as `0`, as it does in `Sum`, so a row without numbers adds nothing.
 
-The demo checked the last rule against kernel 31.1.1: leaving Tuesday's `Km` empty gives `WeekCost = 1052`.
+That last rule was measured against kernel 31.1.1 with a variant of the demo input: with Tuesday's `Km` empty, `WeekCost` becomes `1052`, and adding a Wednesday row that holds only its day name leaves it at `1052`.
 
 **Docs.**
 
 - Validation-Language guide → *Computation Rules* → *Computation tables*, *Preconditions*, *Common Precondition*, *Number of decimal places*, *Calculation cycles*
 - Developer guide → *Entry points to kernel-md* → *Validating a document / Computations on a document* (the `compute(...)` / `applyTo(...)` API)
-- `SumOfTerms` is new in kernel 31. The guide sections above predate it; the editor's function help describes it as *SumOfTerms(Path, Term)*.
+- The guide sections above predate `SumOfTerms`. The model editor's built-in function help lists it as *SumOfTerms(Path, Term)*.
 
 ## 5. `LanguageDemo` — Interesting language features
 
@@ -226,7 +226,14 @@ ComputationBuilder…field(total).modify(cb -> cb.computationAlternatives(
 "FieldFilled(RegisteredFuel) And [FuelType] != [RegisteredFuel]"
 ```
 
-The self-validating computation is the standout: a computed field isn't just *filled* by the engine, it's also *checked* — if a document carries a `TotalScore` that disagrees with `Score1 + Score2`, that's an error, so derived values can't silently drift out of sync. `gradle runLanguage`'s second document carries `TotalScore = 99` against scores of 4 and 5, picks `DIESEL` without an emissions cert, assembles `31 February`, and records the registered fuel as `Diesel` — and trips all four rules at once. Derived-fields-that-validate-themselves, attribute matrices on enum members, and calendar-validity of assembled dates are all outside the vocabulary of mainstream validators.
+The self-validating computation is the standout: a computed field isn't just *filled* by the engine, it's also *checked* — if a document carries a `TotalScore` that disagrees with `Score1 + Score2`, that's an error, so derived values can't silently drift out of sync. `gradle runLanguage`'s second document trips all four rules at once:
+
+- `TotalScore = 99` against scores of 4 and 5.
+- `DIESEL` is chosen without an emissions cert.
+- The date parts assemble to `31 February`.
+- The registered fuel is `Diesel`, the display text.
+
+Derived-fields-that-validate-themselves, attribute matrices on enum members, and calendar-validity of assembled dates are all outside the vocabulary of mainstream validators.
 
 **Enums compare by stored value.** An enumeration field stores a code (`DIESEL`) and shows a localized text (`Diesel`). When a rule compares it with a string field, the kernel compares the code. In the second document the registration says `Diesel`, the display text, so `FUEL_MISMATCH` fires even though a person would call the two equal. Kernel 30 rejected this comparison while generating code (`MVK_INVALID_COMPARE_ENUM_TO_STRING`); kernel 31 accepts it. The same applies when you compare an enumeration that has texts with one that doesn't. If your data might hold display texts, map them to codes before validation.
 
@@ -435,10 +442,10 @@ Seven documents and one computation are compared: severity, message type, error 
 
 A few things are worth knowing when you use the TypeScript runtime yourself:
 
-- **Generate `STANDARD` JavaScript.** `createScriptAccessor` accepts only code generated with `JsCodeGenConfig.STANDARD`. The UMD module with typings that §9 produces (`WRAPPED_IN_FUNCTION_EXTENDED`) fails to load there.
-- **The script runs through `new Function`.** Content-security policies that forbid `eval` block it; the kernel documentation asks you to contact the A12 team in that case.
+- **Generate `STANDARD` JavaScript.** `createScriptAccessor` accepts only code generated with `JsCodeGenConfig.STANDARD`. The module with typings that §9 produces for browsers and module loaders (`WRAPPED_IN_FUNCTION_EXTENDED`) fails to load there.
+- **The script runs through `new Function`.** A browser security policy that forbids `eval` blocks it. In that case the kernel documentation asks you to contact the A12 team.
 - **Messages are localizable, not text.** `errorText` holds keys, arguments, and the model's texts; `@com.mgmtp.a12.utils/utils-localization` turns them into a string for a locale.
-- **Numbers lose their scale.** Documents are plain JSON, so a rate of `50.00` becomes `50`. The Java runtime keeps the `BigDecimal` scale. The values compare equal; compare `examples/computation/computed.json` with `examples/typescript/timesheet-computed-by-ts.json`.
+- **Numbers lose their scale.** Documents are plain JSON, so a rate of `50.00` becomes `50`. The Java runtime keeps the `BigDecimal` scale. The values are numerically equal. To see the difference, open [`computed.json`](./examples/computation/computed.json) next to [`timesheet-computed-by-ts.json`](./examples/typescript/timesheet-computed-by-ts.json).
 
 **How it's wired.** The kit builds the A12 npm packages but publishes them to no registry. `gradle tsVendor` copies the tarballs from the kit's working directory (`$A12_BOOTSTRAP_HOME`, by default `../.a12-bootstrap/2026.06-ext1`) into `ts/vendor/`. `tsInstall` runs `pnpm install`, and `runTs` type-checks the script with `tsc` and runs it with Node's built-in TypeScript support. `runTs` needs Node.js 24 or newer and pnpm, so `gradle showcases` doesn't include it.
 

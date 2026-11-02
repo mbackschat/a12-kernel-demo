@@ -54,7 +54,7 @@ Two distinct kinds of message come out of ④:
 
 In the kernel's source tree, parsing and code generation live under `kernel-tool/`, the runtime under `kernel-rt/`, and the model and Document API, including `validateFull`, under `kernel-md/`.
 
-You never depend on these modules directly. Since kernel 31 most of them are published as `kernel-internal-*` artifacts, and `kernel-md-facade` pulls them in for you. The runtime executor is the exception: its name carries the kernel version, for example `kernel-core-runtime-31-1`.
+You never depend on these modules directly. Since kernel 31 most of them are published as `kernel-internal-*` artifacts, and `kernel-md-facade` pulls them in for you. The runtime executor keeps its own name, which carries the kernel version, for example `kernel-core-runtime-31-1`.
 
 ## 4. The two demo phases, in kernel terms
 
@@ -129,7 +129,7 @@ In short: an exception means "your model is wrong"; messages mean "this document
 
 ## 9. Beyond this demo — the feature showcases
 
-This Purchase-Order demo is the "hello world". The kernel does a great deal more, and **[`SHOWCASE.md`](./SHOWCASE.md)** has eleven standalone, runnable demos (ten Java `*Demo` mains with fresh domains, plus a TypeScript parity check, all with code excerpts), **[`COMPARISON.md`](./COMPARISON.md)** weighs the kernel against five mainstream validators (Zod, Pydantic, JSON Schema, Bean Validation, FluentValidation), and **[`KERNEL-SEMANTICS.md`](./KERNEL-SEMANTICS.md)** documents how the validation language evaluates (truth values, missing data, the "required" property, numeric/date rules). The same pipeline (§3) and APIs (`Demos.java`) underlie all of them. Highlights worth a developer's time:
+This Purchase-Order demo is the "hello world". The kernel does a great deal more, and **[`SHOWCASE.md`](./SHOWCASE.md)** has eleven standalone, runnable demos: ten Java `*Demo` mains with fresh domains, plus a TypeScript parity check, all with code excerpts. Also, **[`COMPARISON.md`](./COMPARISON.md)** weighs the kernel against five mainstream validators (Zod, Pydantic, JSON Schema, Bean Validation, FluentValidation), and **[`KERNEL-SEMANTICS.md`](./KERNEL-SEMANTICS.md)** documents how the validation language evaluates (truth values, missing data, the "required" property, numeric/date rules). The same pipeline (§3) and APIs (`Demos.java`) underlie all of them. Highlights worth a developer's time:
 
 - **Structural rules over repeating groups** (`IterationDemo`) — uniqueness with per-row error pointers, `Sum`, filtered `Sum(… Having …)`.
 - **Cross-array logic** (`CrossArrayDemo`) — parallel iteration (join two arrays by an index field), a `$`-correlated filter, and a `CurrentRepetition` row-order check. The "a validator does SQL-like queries" story.

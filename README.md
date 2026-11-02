@@ -14,15 +14,15 @@ After the one-time setup (run the [`a12-kernel-bootstrap`](https://github.com/mb
 - **`gradle demo`** — the basics: build a Purchase-Order model + sample data, validate it, and print the errors/warnings.
 - **`gradle showcases`** — nine feature demos: repeating-group rules, computations, cross-array "SQL-like" logic, the Document API, code generation, and more.
 - **`gradle runTyped`** — typed accessors: compile-time-typed access to documents.
-- **`gradle runTs`** — the same rules in Node.js with the kernel's TypeScript runtime, compared result by result with Java. Needs Node.js 24 and pnpm; see [Run the TypeScript showcase](#run-the-typescript-showcase).
+- **`gradle runTs`** — the same rules in Node.js with the kernel's [TypeScript runtime](./KERNEL-GLOSSARY.md), compared result by result with Java. Needs Node.js 24 and pnpm; see [Run the TypeScript showcase](#run-the-typescript-showcase).
 
-All eleven are explained in **[`SHOWCASE.md`](./SHOWCASE.md)**, and weighed against five mainstream validators (Zod, Pydantic, JSON Schema, Bean Validation, FluentValidation) in **[`COMPARISON.md`](./COMPARISON.md)**.
+All eleven feature demos are explained in **[`SHOWCASE.md`](./SHOWCASE.md)**, and weighed against five mainstream validators (Zod, Pydantic, JSON Schema, Bean Validation, FluentValidation) in **[`COMPARISON.md`](./COMPARISON.md)**.
 
 For how the engine works under the hood, see **[`KERNEL-DEV-GUIDE.md`](./KERNEL-DEV-GUIDE.md)** — the model → compile → validate pipeline.
 
 ## The base demo, in two phases
 
-The base demo is split into the two phases of real-world kernel use — and it's the **only** demo split this way, to teach the **author-once / validate-often** persistence-and-decoupling story (the feature demos in [`SHOWCASE.md`](./SHOWCASE.md) are instead self-contained programs that build *and* validate inline):
+The base demo is split into the two phases of real-world kernel use — and it's the **only** demo split this way, to teach the **author-once / validate-often** persistence-and-decoupling story (the Java feature demos in [`SHOWCASE.md`](./SHOWCASE.md) are instead self-contained programs that build *and* validate inline):
 
 1. **Author once (`BuilderMain`)** — build a **Purchase-Order DocumentModel** in code (fields + validation rules whose conditions are written in the A12 DSL), build three sample documents, and **persist them all as JSON** under `output/`. Models are created upfront so they can be re-used.
 2. **Validate often (`ValidatorMain`)** — **load** the persisted model + documents from JSON and run validation, printing the resulting **errors and warnings**. Fully decoupled from authoring: it consumes JSON via the public kernel API only.
@@ -102,15 +102,17 @@ This demo is built and tested against A12 release **2026.06-ext1** (kernel 31.1.
 | Groovy (runtime, dynamic path) | 3.0.25 |
 | JDK / Gradle | 21 / 9.8.2 |
 
-[`build.gradle`](./build.gradle) declares a single kernel dependency, `kernel-md-facade`, and pins only the kernel version. The facade brings in matching versions of everything else in the table.
+[`build.gradle`](./build.gradle) declares a single kernel dependency, `kernel-md-facade`, and pins only the kernel version. The facade brings in matching versions of the other artifacts in the table, including Groovy.
 
-> **Upgrading your own project from 2025.06?** Because `~/.m2` keeps old releases, an outdated dependency doesn't fail the build: Gradle quietly resolves the old jar instead. Kernel 31 merged several modules into `kernel-md-facade`, among them `kernel-md-model`, `kernel-md-a12internal`, and `kernel-md-typed-accessor-gen`. Check your dependency report for leftover 30.8.1 or 29.3.0 entries.
+> **Upgrading your own project from 2025.06?** `~/.m2` keeps old releases, so an outdated dependency doesn't fail the build. Gradle quietly resolves the old jar instead.
+>
+> Kernel 31 merged several modules into `kernel-md-facade`: `kernel-md-model`, `kernel-md-a12internal`, and `kernel-md-typed-accessor-gen`. Check your dependency report for leftover 30.8.1 or 29.3.0 entries.
 
 ## Build & run
 
 To run the demo you need only a JDK 21; Node.js isn't required.
 
-Run Gradle with a fresh Gradle home, that is, a directory without init scripts. Gradle then uses only the two repositories that `build.gradle` declares, your local Maven repository and Maven Central, and no global setting can add a private repository.
+Run Gradle with a fresh Gradle home: a directory without init scripts. That way Gradle uses only the two repositories that `build.gradle` declares, your local Maven repository and Maven Central. No global setting can add a private repository.
 
 ```sh
 ROOT="$HOME/oss/a12"                                  # the parent directory of this demo; adjust to your checkout
@@ -130,18 +132,24 @@ If your default `gradle` already uses public repositories only and runs on JDK 2
 
 ### Run the TypeScript showcase
 
-`gradle runTs` validates the demo documents in Node.js and compares every result with Java's. It needs two more tools:
+`gradle runTs` validates the demo documents in Node.js and compares every result with Java's. Before the first run, install two more tools:
 
 - Node.js 24 or newer
-- pnpm
+- [pnpm](https://pnpm.io/installation)
 
-Run it like the other tasks:
+Then run the task in the same shell as the commands above, so `$GRADLE` and `$ROOT` are still set:
 
 ```sh
 "$GRADLE" -p "$ROOT/a12-kernel-demo" --no-daemon runTs
 ```
 
-The task copies the A12 npm packages from the kit's working directory into `ts/vendor/` and installs them with pnpm. pnpm downloads the remaining packages (the TypeScript compiler, Node.js type definitions, and `big.js`) from the public npm registry. If you moved the kit's working directory, set `A12_BOOTSTRAP_HOME` to its new location.
+The task does three things:
+
+1. It copies the A12 npm packages from the kit's working directory into `ts/vendor/`.
+2. It installs them with pnpm.
+3. It downloads the remaining packages from the public npm registry: the TypeScript compiler, the Node.js type definitions, and `big.js`.
+
+If you moved the kit's working directory, set `A12_BOOTSTRAP_HOME` to the full path of its release folder, for example `$ROOT/.a12-bootstrap/2026.06-ext1`.
 
 ## Expected output
 
@@ -167,7 +175,7 @@ The task copies the A12 npm packages from the kit's working directory into `ts/v
 
 Two copies exist, on purpose:
 
-- **[`examples/`](./examples/)** — a **committed, annotated reference set** you can browse without building anything. One folder **per demo** (named after the demo, not the model) — `purchase-order/` (the base demo) plus the showcase folders (`iteration/`, `computation/`, `dsl-tour/`, `extension/`, `cross-array/`, `document-api/`, `partial-validation/`, `language/`, `typed-accessor/`) — each holding its model `*.dm.json` and sample documents. See [`examples/README.md`](./examples/README.md) for the full, guided tour.
+- **[`examples/`](./examples/)** — a **committed, annotated reference set** you can browse without building anything. One folder **per demo** (named after the demo, not the model) — `purchase-order/` (the base demo) plus the showcase folders (`iteration/`, `computation/`, `dsl-tour/`, `extension/`, `cross-array/`, `document-api/`, `partial-validation/`, `language/`, `typed-accessor/`, `typescript/`) — each holding its model `*.dm.json` and sample documents. See [`examples/README.md`](./examples/README.md) for the full, guided tour.
 - **`output/`** — where the demos write **fresh** copies on each run, one folder per demo (e.g. `output/purchase-order/purchase-order.dm.json` + `valid/invalid/large.json`). Git-ignored, so running the demos never dirties the repo; `validate` reads from `output/purchase-order/`, and `gradle refreshExamples` copies `output/**/*.json` into `examples/`.
 
 ## Learn more

@@ -1,6 +1,6 @@
 # A12 Kernel — validation-language semantics
 
-A reference to how the A12 validation language *evaluates*, beyond what its syntax shows: its truth model, how it treats missing values, what the "required" property means, and the numeric, date, string, enumeration, repetition, path, and computation rules that determine when a rule fires. The behaviours below are documented in the kernel's *Validation-Language guide*; each entry cites the relevant chapter/section by title. Since release 2026.06 that guide is published only with the A12 documentation on geta12.com (as the *Kernel Language* documentation), not in the public kernel source code.
+A reference to how the A12 validation language *evaluates*, beyond what its syntax shows: its truth model, how it treats missing values, what the "required" property means, and the numeric, date, string, enumeration, repetition, path, and computation rules that determine when a rule fires. The behaviours below are documented in the kernel's *Validation-Language guide*; each entry cites the relevant chapter/section by title. That guide is no longer in the public kernel source; see the note in [`KERNEL-GLOSSARY.md`](./KERNEL-GLOSSARY.md).
 
 Two facts frame everything else:
 
@@ -23,7 +23,7 @@ Which operators are legal on a field, and how a missing or mismatched value beha
 | **Number** | **scale** = max fractional digits; min/max value; `trait` = amount / percent / permille | number | Scale **gates `==`/`!=`** (mismatched scale is a *parse-time* error — round one side first); an unspecified number is substituted with **`0`** in comparisons (but *ignored* by min/max); orderable with `< > <= >=`. |
 | **Boolean** | True / False / unset | boolean | Three states; an unspecified value leaves a comparison **not evaluated**; `[F] == True` is **not** the same as `FieldFilled(F)`. |
 | **Confirm** | True / unset (a checkbox) | confirm | Distinct from Boolean: an unspecified value is treated as **`False`** in comparisons; compares only to another Confirm or the constant `True`. |
-| **Enumeration** | `values`; *with* or *without* localized **texts**; **categories** | enum value | Compared by the **stored value**, not the display text (`[Country]=="F"`); comparing with a string field or another enum also compares stored values (kernel 30 rejected comparing a *text-bearing* enum with a string field or a *textless* enum; kernel 31 allows it); `->` reads a value's **category** attribute. |
+| **Enumeration** | `values`; *with* or *without* localized **texts**; **categories** | enum value | Compared by the **stored value**, not the display text (`[Country]=="F"`), also against a string field or another enum; see §8 for the kernel 30 restriction. `->` reads a value's **category** attribute. |
 | **Date** | `format`; `datePrecision` = full / day- / month- / year-optional | date | Constants are `DD.MM.YYYY` (day-first); a **string literal matching that format parses as a date** (so it breaks string concatenation); precision gates `DayFromDate`/`MonthFromDate`/… and `ValueAsDate`. |
 | **DateTime** *(extends Date)* | — | date-time | The required operand for `DifferenceIn{Hours,Minutes,Seconds}`, `Add{Hours,…}`, `*FromTime`, and `Now`. |
 | **Time** *(extends Date)* | — | time | The operand for `HoursFromTime` / `MinutesFromTime` / `SecondsFromTime`. |

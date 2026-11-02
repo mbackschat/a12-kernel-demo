@@ -1,6 +1,8 @@
 # Kernel glossary
 
-The terms you'll meet reading this demo, [`SHOWCASE.md`](./SHOWCASE.md), and the example JSON — explained for someone new to the A12 Kernel. Each entry points, where useful, to the kernel documentation by **chapter → section** in its two guides: the *Validation-Language guide* ("Kernel Language" — for business analysts) and the *Developer guide* ("Kernel" — architecture and the Java / TypeScript APIs). The public docs at geta12.com number these chapters; here they're cited by title. Since release 2026.06, the Validation-Language guide is published only with the A12 documentation on geta12.com, where it's called the *Kernel Language* documentation. It's no longer part of the public kernel source code. Where a term is illustrated by a runnable showcase, the entry marks it *Shown in `SomeDemo`* on its second line — see [`SHOWCASE.md`](./SHOWCASE.md).
+The terms you'll meet reading this demo, [`SHOWCASE.md`](./SHOWCASE.md), and the example JSON — explained for someone new to the A12 Kernel. Each entry points, where useful, to the kernel documentation by **chapter → section** in its two guides: the *Validation-Language guide* ("Kernel Language" — for business analysts) and the *Developer guide* ("Kernel" — architecture and the Java / TypeScript APIs). The public docs at geta12.com number these chapters; here they're cited by title. Where a term is illustrated by a runnable showcase, the entry marks it *Shown in `SomeDemo`* on its second line — see [`SHOWCASE.md`](./SHOWCASE.md).
+
+> **Where the Validation-Language guide lives.** Since release 2026.06, the Validation-Language guide is published only with the A12 documentation on geta12.com, where it's called the *Kernel Language* documentation. It's no longer part of the public kernel source code.
 
 > The key idea to grasp first: **a rule states the *error* scenario.** Its condition is written so that `true` means the data is **invalid**. `FieldNotFilled(CustomerName)` is the rule "the customer name is missing" — when it's true, that's an error.
 
@@ -65,7 +67,7 @@ The terms you'll meet reading this demo, [`SHOWCASE.md`](./SHOWCASE.md), and the
   *Shown in* `IterationDemo` and `CrossArrayDemo`  ·  *Docs:* Validation-Language guide → *Operators and language constructs → Functional language constructs*
 - **`SumOfTerms`** — new in kernel 31: evaluates a numeric term once per row of a `*`-list and adds up the results, so a total needs no per-row helper field: `SumOfTerms(Days*, [Hours] * [Rate] + [Km] * 0.30)`.
 
-  *Shown in* `ComputationDemo`  ·  *Docs:* newer than the guide sections cited here; see [`KERNEL-SEMANTICS.md`](./KERNEL-SEMANTICS.md) → *The filter operator `Having`, the `$` correlation, and aggregation*
+  *Shown in* `ComputationDemo`  ·  *Docs:* the guide predates this function; see [`KERNEL-SEMANTICS.md`](./KERNEL-SEMANTICS.md) → *The filter operator `Having`, the `$` correlation, and aggregation*
 - **`$`-operator** — inside a `Having`, pins a reference to the *current* row of the iterating group while filtering another list (a correlated subquery). Must precede the whole path: `[$/Shipment/Stops/Eta]`.
 
   *Shown in* `CrossArrayDemo`  ·  *Docs:* Validation-Language guide → *Operators and language constructs → Functional language constructs*
@@ -107,8 +109,8 @@ The terms you'll meet reading this demo, [`SHOWCASE.md`](./SHOWCASE.md), and the
   *The base demo's `large` document is VALID despite a WARNING.*  ·  *Docs:* Developer guide → *Entry points to kernel-md → Validating a document*
 - **Dynamic vs static code generation** — *dynamic* (this demo): the kernel generates + compiles validation code on first use and caches it. *Static*: pre-generate the code at build time and ship it.
 
-  *Generating standalone code is shown in `CodegenDemo`.*  ·  *Docs:* Developer guide → *Getting started* and *Architecture*
-- **TypeScript runtime** — the kernel's client-side runtime, installed from npm-style packages (`@com.mgmtp.a12.kernel/kernel-md-facade`). It has no code generator: it runs JavaScript that the Java kernel generated from the model, and produces the same messages and computed values as the Java runtime.
+  *Generating standalone code is shown in `CodegenDemo`.*  ·  *Docs:* Developer guide → *Getting started* and *Introduction → Architecture*
+- **TypeScript runtime** — the kernel's client-side runtime, installed from npm packages (`@com.mgmtp.a12.kernel/kernel-md-facade`). It has no code generator: it runs JavaScript that the Java kernel generated from the model, and produces the same messages and computed values as the Java runtime.
 
   *Shown in* `gradle runTs` (`ts/src/parity.ts`)  ·  *Docs:* Developer guide → *Entry points to kernel-md → Validating a document / Computations on a document → TypeScript*
 - **Groovy (runtime)** — the dynamic path generates server-side validation code as Groovy, so Groovy must be on the runtime classpath. `kernel-md-facade` adds it for you.
