@@ -167,3 +167,53 @@ tasks.register('runTyped', JavaExec) {
     mainClass = 'com.example.a12demo.TypedAccessorDemo'
     quietLogging(it)
 }
+
+// ---------------------------------------------------------------------------------------------------
+// TypeScript parity showcase (ts/): validate the demo documents in Node.js with the kernel's TypeScript
+// runtime and compare every result with the Java runtime. Needs Node.js 24+ and pnpm on the PATH, so it is
+// not part of `showcases`. See SHOWCASE.md.
+// ---------------------------------------------------------------------------------------------------
+def bootstrapHome = providers.environmentVariable('A12_BOOTSTRAP_HOME')
+        .orElse(file('../.a12-bootstrap/2026.06-ext1').path)
+
+// The kit builds the A12 npm packages but publishes them to no registry; ts/package.json installs them
+// from these copies.
+tasks.register('tsVendor', Copy) {
+    group = 'a12-showcase'
+    description = 'Copy the A12 npm tarballs from the a12-kernel-bootstrap working directory into ts/vendor/.'
+    from(bootstrapHome.map { "$it/npm-artifacts" }) { include '*.tgz' }
+    into 'ts/vendor'
+}
+
+tasks.register('tsInstall', Exec) {
+    group = 'a12-showcase'
+    description = 'Install the TypeScript showcase dependencies with pnpm.'
+    dependsOn 'tsVendor'
+    def facadeTarball = file('ts/vendor/com.mgmtp.a12.kernel-kernel-md-facade-31.1.1.tgz')
+    doFirst {
+        if (!facadeTarball.isFile()) {
+            throw new GradleException("No A12 npm tarballs in ${bootstrapHome.get()}/npm-artifacts. Run the " +
+                    "a12-kernel-bootstrap kit first, or set A12_BOOTSTRAP_HOME to its working directory.")
+        }
+    }
+    workingDir 'ts'
+    commandLine 'pnpm', 'install'
+}
+
+// Java compiles each model to JavaScript and records its own results for the parity check.
+tasks.register('exportJs', JavaExec) {
+    group = 'a12-showcase'
+    description = 'Compile the persisted models to JavaScript and record the Java validation results.'
+    dependsOn 'buildModels', 'runIteration', 'runComputation'   // they persist the models and documents read here
+    classpath = sourceSets.main.runtimeClasspath
+    mainClass = 'com.example.a12demo.JsExport'
+    quietLogging(it)
+}
+
+tasks.register('runTs', Exec) {
+    group = 'a12-showcase'
+    description = 'TypeScript parity: run the same rules in Node.js and compare every result with Java.'
+    dependsOn 'tsInstall', 'exportJs'
+    workingDir 'ts'
+    commandLine 'pnpm', 'run', '--silent', 'parity'
+}

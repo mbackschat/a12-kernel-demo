@@ -5,20 +5,24 @@
 This is a **personal project** — a comprehensive set of hands-on showcases for the features and API of the **A12 Kernel**, the model-and-DSL engine behind mgm's *A12* low-code platform for complex business forms.
 The premise of the Kernel is: instead of hand-coding validation, you *declare* the **error scenarios** (and computed fields) as data and let the kernel compile them into executable validators. I wrote one small, runnable Java program per capability — to see each one work and compare it against the validators most of us reach for (Zod, Pydantic, JSON Schema, Bean Validation, FluentValidation), in **[`COMPARISON.md`](./COMPARISON.md)**.
 
-> **Not an official A12 artifact.** It isn't part of any mgm A12 release and isn't affiliated with or endorsed by mgm — it's a personal exploration, shared in case it's useful to others evaluating or integrating the kernel. *(Java only for now — the TypeScript side isn't wired up; see [Setup](#setup-one-time).)*
+> **Not an official A12 artifact.** It isn't part of any mgm A12 release and isn't affiliated with or endorsed by mgm — it's a personal exploration, shared in case it's useful to others evaluating or integrating the kernel. *(Mostly Java; one showcase runs the same rules in Node.js with the kernel's TypeScript runtime.)*
 
 ## Quick start
 
 After the one-time setup (run the [`a12-kernel-bootstrap`](https://github.com/mbackschat/a12-kernel-bootstrap) kit — see [Setup](#setup-one-time) below):
 
 - **`gradle demo`** — the basics: build a Purchase-Order model + sample data, validate it, and print the errors/warnings.
-- **`gradle showcases`** — nine feature demos (repeating-group rules, computations, cross-array "SQL-like" logic, the Document API, code generation, …); a tenth, typed accessors, runs on its own via **`gradle runTyped`**. All ten are detailed in **[`SHOWCASE.md`](./SHOWCASE.md)**, and weighed against five mainstream validators (Zod, Pydantic, JSON Schema, Bean Validation, FluentValidation) in **[`COMPARISON.md`](./COMPARISON.md)**.
+- **`gradle showcases`** — nine feature demos: repeating-group rules, computations, cross-array "SQL-like" logic, the Document API, code generation, and more.
+- **`gradle runTyped`** — typed accessors: compile-time-typed access to documents.
+- **`gradle runTs`** — the same rules in Node.js with the kernel's TypeScript runtime, compared result by result with Java. Needs Node.js 24 and pnpm; see [Run the TypeScript showcase](#run-the-typescript-showcase).
+
+All eleven are explained in **[`SHOWCASE.md`](./SHOWCASE.md)**, and weighed against five mainstream validators (Zod, Pydantic, JSON Schema, Bean Validation, FluentValidation) in **[`COMPARISON.md`](./COMPARISON.md)**.
 
 For how the engine works under the hood, see **[`KERNEL-DEV-GUIDE.md`](./KERNEL-DEV-GUIDE.md)** — the model → compile → validate pipeline.
 
 ## The base demo, in two phases
 
-The base demo is split into the two phases of real-world kernel use — and it's the **only** demo split this way, to teach the **author-once / validate-often** persistence-and-decoupling story (the ten feature demos in [`SHOWCASE.md`](./SHOWCASE.md) are instead single self-contained `main`s that build *and* validate inline):
+The base demo is split into the two phases of real-world kernel use — and it's the **only** demo split this way, to teach the **author-once / validate-often** persistence-and-decoupling story (the feature demos in [`SHOWCASE.md`](./SHOWCASE.md) are instead self-contained programs that build *and* validate inline):
 
 1. **Author once (`BuilderMain`)** — build a **Purchase-Order DocumentModel** in code (fields + validation rules whose conditions are written in the A12 DSL), build three sample documents, and **persist them all as JSON** under `output/`. Models are created upfront so they can be re-used.
 2. **Validate often (`ValidatorMain`)** — **load** the persisted model + documents from JSON and run validation, printing the resulting **errors and warnings**. Fully decoupled from authoring: it consumes JSON via the public kernel API only.
@@ -30,7 +34,7 @@ It uses the **dynamic** validation path (the kernel generates + compiles validat
 | builder | [`BuilderMain.java`](src/main/java/com/example/a12demo/purchaseorder/BuilderMain.java) | build model + documents → write `output/purchase-order/*.json` |
 | validator | [`ValidatorMain.java`](src/main/java/com/example/a12demo/purchaseorder/ValidatorMain.java) | load `output/purchase-order/*.json` → validate → print messages |
 | model | [`PurchaseOrderModel.java`](src/main/java/com/example/a12demo/purchaseorder/PurchaseOrderModel.java) | the model definition (used by the builder) |
-| showcases | [`SHOWCASE.md`](./SHOWCASE.md) + `*Demo.java` | ten feature demos (repeating groups, computations, DSL tour, extensions, codegen, cross-array logic, Document API, partial validation, language features, typed accessors) |
+| showcases | [`SHOWCASE.md`](./SHOWCASE.md) + `*Demo.java` | eleven feature demos (repeating groups, computations, DSL tour, extensions, codegen, cross-array logic, Document API, partial validation, language features, typed accessors, TypeScript parity) |
 
 ## The model & rules
 
@@ -83,7 +87,7 @@ The kit writes to `~/.m2` only after a successful, verified build. It adds the n
 
 To learn what the kit builds, how it verifies the build, and which environment variables it reads, see the [kit's README](https://github.com/mbackschat/a12-kernel-bootstrap#readme).
 
-> **Java only.** The kit also builds the kernel's TypeScript packages, but it keeps them as npm tarballs in its working directory and doesn't publish them to any npm registry. This demo uses only the Java artifacts.
+> **TypeScript packages.** The kit also builds the kernel's TypeScript packages, but it doesn't publish them to any npm registry; it keeps them as npm tarballs in its working directory. The TypeScript showcase copies them from there (see [Run the TypeScript showcase](#run-the-typescript-showcase)).
 
 ## Compatibility
 
@@ -124,6 +128,21 @@ GRADLE="$ROOT/.a12-bootstrap/2026.06-ext1/tools/gradle-9.8.2/bin/gradle"    # th
 
 If your default `gradle` already uses public repositories only and runs on JDK 21, plain `gradle demo` works too.
 
+### Run the TypeScript showcase
+
+`gradle runTs` validates the demo documents in Node.js and compares every result with Java's. It needs two more tools:
+
+- Node.js 24 or newer
+- pnpm
+
+Run it like the other tasks:
+
+```sh
+"$GRADLE" -p "$ROOT/a12-kernel-demo" --no-daemon runTs
+```
+
+The task copies the A12 npm packages from the kit's working directory into `ts/vendor/` and installs them with pnpm. pnpm downloads the remaining packages (the TypeScript compiler, Node.js type definitions, and `big.js`) from the public npm registry. If you moved the kit's working directory, set `A12_BOOTSTRAP_HOME` to its new location.
+
 ## Expected output
 
 ```
@@ -154,7 +173,7 @@ Two copies exist, on purpose:
 ## Learn more
 
 - **[`KERNEL-DEV-GUIDE.md`](./KERNEL-DEV-GUIDE.md)** — developer walkthrough of *what's actually going on*: DocumentModel/Document, the DSL, and the parse → generate → compile → execute validation pipeline, mapped onto this demo's code and output.
-- **[`SHOWCASE.md`](./SHOWCASE.md)** — the ten feature-showcase demos in depth (code excerpts per feature), plus the "interesting language features" and "powerful but not wired up here" sections.
+- **[`SHOWCASE.md`](./SHOWCASE.md)** — the eleven feature-showcase demos in depth (code excerpts per feature), plus the "interesting language features" and "powerful but not wired up here" sections.
 - **[`COMPARISON.md`](./COMPARISON.md)** — how the kernel stacks up against five mainstream validators (Zod, Pydantic, JSON Schema, Bean Validation, FluentValidation), each introduced from scratch, with a feature-by-feature table.
 - **[`KERNEL-SEMANTICS.md`](./KERNEL-SEMANTICS.md)** — how the validation language evaluates: truth values, missing data, the "required" property, and the numeric/date/string/repetition/computation rules that determine when a rule fires.
 - **[`KERNEL-GLOSSARY.md`](./KERNEL-GLOSSARY.md)** — new to the kernel's vocabulary? Every term used here (DocumentModel, repeating group, the DSL operators, formal validation, typed accessors, …) explained, with pointers into the kernel docs.

@@ -146,7 +146,7 @@ final class Demos {
 
     /** Render a field pointer as the familiar {@code Group[2]/Sub[1]/field} document path (groups carry their
      *  repetition index; the trailing field does not). */
-    private static String pretty(PartiallyKnownDocumentMultiPointer pointer) {
+    static String pretty(PartiallyKnownDocumentMultiPointer pointer) {
         String[] segments = pointer.fullName().replaceFirst("^/", "").split("/");
         List<Integer> reps = pointer.repetitionIndexes();
         StringBuilder sb = new StringBuilder();

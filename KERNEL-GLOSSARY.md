@@ -108,6 +108,9 @@ The terms you'll meet reading this demo, [`SHOWCASE.md`](./SHOWCASE.md), and the
 - **Dynamic vs static code generation** — *dynamic* (this demo): the kernel generates + compiles validation code on first use and caches it. *Static*: pre-generate the code at build time and ship it.
 
   *Generating standalone code is shown in `CodegenDemo`.*  ·  *Docs:* Developer guide → *Getting started* and *Architecture*
+- **TypeScript runtime** — the kernel's client-side runtime, installed from npm-style packages (`@com.mgmtp.a12.kernel/kernel-md-facade`). It has no code generator: it runs JavaScript that the Java kernel generated from the model, and produces the same messages and computed values as the Java runtime.
+
+  *Shown in* `gradle runTs` (`ts/src/parity.ts`)  ·  *Docs:* Developer guide → *Entry points to kernel-md → Validating a document / Computations on a document → TypeScript*
 - **Groovy (runtime)** — the dynamic path generates server-side validation code as Groovy, so Groovy must be on the runtime classpath. `kernel-md-facade` adds it for you.
 
   *Docs:* Developer guide → *Introduction → Architecture*

@@ -1,6 +1,6 @@
 # Feature showcase
 
-Beyond the basic Purchase-Order demo, this repo ships ten **standalone, runnable** demos — one per kernel feature area. Each is a single `*Demo` `main` with its own self-contained model (built in code), sample documents, and a rich result print-out, on its **own original domain** (playlist, timesheet, event registration, product catalog, shipment routing, recipe, loan application, vehicle inspection, subscription). The kernel docs were only a guide to *which* features exist.
+Beyond the basic Purchase-Order demo, this repo ships eleven **standalone, runnable** demos — one per kernel feature area. Ten are Java programs: each is a single `*Demo` `main` with its own self-contained model (built in code), sample documents, and a rich result print-out, on its **own original domain** (playlist, timesheet, event registration, product catalog, shipment routing, recipe, loan application, vehicle inspection, subscription). The eleventh runs three of those models in Node.js with the kernel's TypeScript runtime. The kernel docs were only a guide to *which* features exist.
 
 Every demo persists its built model and documents to `output/` (git-ignored); those are copied into the committed [`examples/`](./examples) so you can read the real JSON without running anything (see [`examples/README.md`](./examples/README.md)). Doc references below point into the two kernel guides by chapter → section title:
 
@@ -11,7 +11,7 @@ Since release 2026.06, the Validation-Language guide is published only with the 
 
 New to the kernel's vocabulary (DocumentModel, repeating group, the DSL operators, formal validation, …)? Keep [`KERNEL-GLOSSARY.md`](./KERNEL-GLOSSARY.md) open alongside this.
 
-Start with **§0**, the base Purchase-Order demo (the README walks it through end to end); the ten that follow form a progression in two clusters — **A. authoring validation logic** (§1–§5, increasing power) and **B. working with the engine & documents** (§6–§10). The `§` column links to each demo's in-depth section below (same order).
+Start with **§0**, the base Purchase-Order demo (the README walks it through end to end); the eleven that follow form a progression in two clusters — **A. authoring validation logic** (§1–§5, increasing power) and **B. working with the engine & documents** (§6–§11). The `§` column links to each demo's in-depth section below (same order).
 
 | § | Demo | What it demonstrates | Domain | Run (`gradle …`) |
 |---|---|---|---|---|
@@ -26,8 +26,9 @@ Start with **§0**, the base Purchase-Order demo (the README walks it through en
 | 8 | `PartialValidationDemo` | Incremental "wizard" validation | Loan-application wizard | `runPartial` |
 | 9 | `CodegenDemo` | Compile a model to code | (reuses playlist) | `runCodegen` |
 | 10 | `TypedAccessorDemo` | Typed accessor overlays | Subscription + add-ons | `runTyped` |
+| 11 | `ts/src/parity.ts` + `JsExport` | The same rules in Node.js, compared with Java | (reuses purchase order, playlist, timesheet) | `runTs` |
 
-`gradle showcases` runs the nine pure-runtime demos (§1–§9); the tenth (`gradle runTyped`) is separate because it adds an isolated build-time codegen step. Shared plumbing (model bridge, runtime wiring, bilingual messages, and the rich `IMessage` printer) lives in [`Demos.java`](src/main/java/com/example/a12demo/Demos.java).
+`gradle showcases` runs the nine pure-runtime demos (§1–§9). Two run separately: `gradle runTyped` (§10) adds an isolated build-time code-generation step, and `gradle runTs` (§11) needs Node.js and pnpm. Shared plumbing (model bridge, runtime wiring, bilingual messages, and the rich `IMessage` printer) lives in [`Demos.java`](src/main/java/com/example/a12demo/Demos.java).
 
 ---
 
@@ -358,7 +359,7 @@ Each call returns a ZIP:
 - **Java:** a self-contained Gradle project, with the sources under `src/main/java/` and a `build.gradle` that depends on the matching runtime, `kernel-core-runtime-31-1`. The generated code imports that runtime's version-specific packages, so you must regenerate it whenever you upgrade the kernel.
 - **JavaScript:** a `.js` validator plus a `.d.ts` typings file. (The kernel calls this target `JAVASCRIPT`; there's no separate `TYPESCRIPT` target.)
 
-`gradle runCodegen` writes both ZIPs to `output/iteration/generated/` (it reuses `IterationDemo`'s model) and lists their entries; compiling/running the generated code is a separate step. The significance for an evaluator: a single business-analyst-authored rule-set becomes a backend validator *and* a matching frontend validator with identical semantics — no library here is multi-language (JSON Schema is portable data, but you still need a different validator engine per language and lose parity as soon as custom keywords appear).
+`gradle runCodegen` writes both ZIPs to `output/iteration/generated/` (it reuses `IterationDemo`'s model) and lists their entries. §11 runs generated JavaScript in Node.js. The significance for an evaluator: a single business-analyst-authored rule-set becomes a backend validator *and* a matching frontend validator with identical semantics — no library here is multi-language (JSON Schema is portable data, but you still need a different validator engine per language and lose parity as soon as custom keywords appear).
 
 **Docs.**
 
@@ -387,9 +388,65 @@ for (var addon : view.subscription().addons()) {     // List<Addons>, strongly t
 }
 ```
 
-**How it's wired (and why it's safe).** The generator is a command-line tool that ships with `kernel-md-facade` as its `typed-accessor-gen-cli` jar (before kernel 31 it was a separate artifact). It runs in an **isolated** Gradle task (`genTypedAccessors`) over a committed model JSON (`src/main/resources/models/subscription.dm.json`, produced by `genSubscriptionModel`). The generated classes + the demo live in their own `typedAccessor` source set, so the other demos compile and run completely independently — a codegen failure can't break the rest of the build. (This is the one feature that needs build-time code generation; everything else here is pure runtime.)
+**How it's wired (and why it's safe).** The generator is a command-line tool that ships with `kernel-md-facade` as its `typed-accessor-gen-cli` jar (before kernel 31 it was a separate artifact). It runs in an **isolated** Gradle task (`genTypedAccessors`) over a committed model JSON (`src/main/resources/models/subscription.dm.json`, produced by `genSubscriptionModel`). The generated classes + the demo live in their own `typedAccessor` source set, so the other demos compile and run completely independently — a codegen failure can't break the rest of the build. (It's the one Java demo that needs build-time code generation.)
 
 **Docs.** Developer guide → *Typed Accessor Classes for Compile-Time Type Checks* (overlay mode).
+
+## 11. TypeScript parity — the same rules in Node.js
+
+**The scenario.** The kernel's central promise is that one rule set behaves the same on the server and in the browser. §9 shows that the kernel *can* compile a model to JavaScript. This demo checks the promise: it runs three models in Node.js with the kernel's TypeScript runtime and compares every result with what the Java runtime reported for the same documents.
+
+**What it shows.** The TypeScript side has no code generator, so the flow has two steps:
+
+1. **Java compiles.** `JsExport` turns each persisted model into plain JavaScript and records Java's own results for the sample documents.
+2. **Node runs.** `ts/src/parity.ts` loads that JavaScript into the TypeScript runtime, validates the same documents, runs the timesheet's computations, and compares.
+
+The TypeScript API is small:
+
+```ts
+import { DocumentRtServiceFactory, GeneratedCodeAccessorFactory } from "@com.mgmtp.a12.kernel/kernel-md-facade";
+import { defaultLocalizerFactory } from "@com.mgmtp.a12.utils/utils-localization";
+
+const accessor = new GeneratedCodeAccessorFactory().createScriptAccessor(script);   // JS generated by Java
+const service  = DocumentRtServiceFactory.createDocumentRtService(accessor);
+
+const result = service.validateFull(document);           // a plain JSON object, same shape as examples/*.json
+result.noErrorOccurred;                                   // false
+result.messages[0].errorCode;                             // "CUSTOMER_REQUIRED"
+defaultLocalizerFactory({ locale: { language: "en", country: "US" } })(...result.messages[0].errorText);
+                                                          // "Customer name is required."
+const computed = service.compute(input).appliedTo(input); // WeekPay, Bonus, WeekCost (SumOfTerms) filled in
+```
+
+`gradle runTs` prints each document's messages in the same format as the Java demos, followed by a verdict:
+
+```
+=== purchase-order/invalid.json ===
+  result: INVALID (errors present)
+  [ERROR   OMISSION_ERROR] CUSTOMER_REQUIRED Customer name is required.
+        at field: Order[1]/CustomerName   rule: /Order/CustomerRequiredRule
+  …
+  ✔ same messages as Java
+…
+All results match the Java runtime.
+```
+
+Seven documents and one computation are compared: severity, message type, error code, field, rule, and the rendered English text all match. So do the computed values, including kernel 31's `SumOfTerms`. If anything differs, the task fails.
+
+A few things are worth knowing when you use the TypeScript runtime yourself:
+
+- **Generate `STANDARD` JavaScript.** `createScriptAccessor` accepts only code generated with `JsCodeGenConfig.STANDARD`. The UMD module with typings that §9 produces (`WRAPPED_IN_FUNCTION_EXTENDED`) fails to load there.
+- **The script runs through `new Function`.** Content-security policies that forbid `eval` block it; the kernel documentation asks you to contact the A12 team in that case.
+- **Messages are localizable, not text.** `errorText` holds keys, arguments, and the model's texts; `@com.mgmtp.a12.utils/utils-localization` turns them into a string for a locale.
+- **Numbers lose their scale.** Documents are plain JSON, so a rate of `50.00` becomes `50`. The Java runtime keeps the `BigDecimal` scale. The values compare equal; compare `examples/computation/computed.json` with `examples/typescript/timesheet-computed-by-ts.json`.
+
+**How it's wired.** The kit builds the A12 npm packages but publishes them to no registry. `gradle tsVendor` copies the tarballs from the kit's working directory (`$A12_BOOTSTRAP_HOME`, by default `../.a12-bootstrap/2026.06-ext1`) into `ts/vendor/`. `tsInstall` runs `pnpm install`, and `runTs` type-checks the script with `tsc` and runs it with Node's built-in TypeScript support. `runTs` needs Node.js 24 or newer and pnpm, so `gradle showcases` doesn't include it.
+
+**Docs.**
+
+- Developer guide → *Entry points to kernel-md* → *Validating a document / Computations on a document* → *TypeScript*
+- Developer guide → *Entry points to kernel-md* → *Generate validation code from document model* ("There is no such an API provided by Kernel in TypeScript")
+- Developer guide → *Introduction* → *Architecture* (one rule set for server and client)
 
 ---
 

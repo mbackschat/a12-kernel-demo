@@ -25,7 +25,7 @@ A feature-by-feature comparison against the five contenders (introduced in detai
 | **Parallel iteration** — join two repeating groups by a shared key (`CrossArrayDemo`) | custom | custom | hard | custom | custom |
 | **Tolerance** comparison as a first-class op (`DiffersWithToleranceRange`; `DslTourDemo`) | custom | custom | hard | custom | custom |
 | Localized, value-interpolated messages **authored as model data** (every bilingual message) | partial | partial | partial³ | **built-in**⁴ | **built-in**⁴ |
-| One **data-authored** rule-set running identically in **Java + JS + Groovy** (`CodegenDemo`) | hard | hard | partial⁵ | hard | hard |
+| One **data-authored** rule-set running identically in **Java + JS + Groovy** (`CodegenDemo`; Java/Node parity checked by `runTs`) | hard | hard | partial⁵ | hard | hard |
 | "Exactly one of N" / all-or-none field groups (`LanguageDemo`) | custom | custom | partial⁶ | custom | custom |
 | **Relevance-scoped partial validation** — never reports an error you can't currently fix (`PartialValidationDemo`) | custom | custom | hard | partial⁷ | partial⁷ |
 
@@ -41,7 +41,7 @@ A feature-by-feature comparison against the five contenders (introduced in detai
 
 The recurring pattern above — column after column of "custom" — is the point: the kernel ships as *declarative operators* what the others leave you to hand-write. Five differences stand out:
 
-1. **One rule-set, authored as data, compiled to Java + JavaScript + Groovy.** Every code-first library here is single-language; JSON Schema is portable data but needs a separate engine per language and can neither compute nor target Groovy (`CodegenDemo`).
+1. **One rule-set, authored as data, compiled to Java + JavaScript + Groovy.** Every code-first library here is single-language; JSON Schema is portable data but needs a separate engine per language and can neither compute nor target Groovy (`CodegenDemo`). `gradle runTs` runs the generated JavaScript in Node.js and confirms it reports exactly what the Java runtime reports.
 2. **Declarative filtered aggregation** — `Sum / Count / Max … Having` — no mainstream library has "aggregate over a *filtered subset* of array rows" as a primitive (`IterationDemo`, `CrossArrayDemo`).
 3. **Cross-row uniqueness with an automatic per-row error pointer** — everyone can *detect* duplicates; the kernel hands you the offending row, ready to highlight, for free (`IterationDemo`).
 4. **Computed fields and localized messages as model data**, editable by non-programmers rather than baked into code (`ComputationDemo`, and every bilingual message in the demos).

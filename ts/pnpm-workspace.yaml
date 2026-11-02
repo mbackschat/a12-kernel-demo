@@ -1,0 +1,11 @@
+# The A12 packages depend on each other by version number (e.g. kernel-md-facade needs
+# kernel-core-runtime-ts 31.1.1), and those versions exist on no npm registry. These overrides send
+# every such reference to the tarballs that `gradle tsVendor` copies from the a12-kernel-bootstrap kit.
+overrides:
+  "@com.mgmtp.a12.base/base-model-api": "file:vendor/com.mgmtp.a12.base-base-model-api-30.0.2.tgz"
+  "@com.mgmtp.a12.kernel/kernel-core-runtime-api-ts": "file:vendor/com.mgmtp.a12.kernel-kernel-core-runtime-api-ts-31.1.1.tgz"
+  "@com.mgmtp.a12.kernel/kernel-core-runtime-ts": "file:vendor/com.mgmtp.a12.kernel-kernel-core-runtime-ts-31.1.1.tgz"
+  "@com.mgmtp.a12.kernel/kernel-md-facade": "file:vendor/com.mgmtp.a12.kernel-kernel-md-facade-31.1.1.tgz"
+  "@com.mgmtp.a12.utils/utils-collections": "file:vendor/com.mgmtp.a12.utils-utils-collections-7.0.1.tgz"
+  "@com.mgmtp.a12.utils/utils-localization": "file:vendor/com.mgmtp.a12.utils-utils-localization-8.0.2.tgz"
+  "@com.mgmtp.a12.utils/utils-logging": "file:vendor/com.mgmtp.a12.utils-utils-logging-7.0.2.tgz"

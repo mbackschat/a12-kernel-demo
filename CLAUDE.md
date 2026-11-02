@@ -17,6 +17,7 @@ Before writing/committing a file, scan it for `/Users/`, usernames, and other lo
 A runnable A12 Kernel validation demo:
 - `BuilderMain` — authors a Purchase-Order DocumentModel and sample documents, and **persists them as JSON** under `output/purchase-order/` (models are created upfront, to be re-used).
 - `ValidatorMain` — **loads** those JSON files and runs validation, printing errors/warnings.
+- `ts/` — the TypeScript parity showcase (`gradle runTs`): `JsExport` compiles persisted models to JavaScript, and `ts/src/parity.ts` runs them in Node.js and compares with Java. Its A12 npm packages come from the bootstrap kit's working directory via `gradle tsVendor`; `ts/vendor/`, `ts/node_modules/`, and the lockfile are git-ignored.
 
 See [`README.md`](./README.md) for how to run it, and [`SHOWCASE.md`](./SHOWCASE.md) for the feature-showcase demos.
 

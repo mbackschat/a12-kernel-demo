@@ -2,7 +2,7 @@
 
 A developer-level walkthrough of how the A12 Kernel turns a **DocumentModel + validation rules** into the **errors and warnings** this demo prints. Read [`README.md`](./README.md) first for how to set up and run it.
 
-> ⚠️ **Java only.** The kernel also has a TypeScript runtime (`@com.mgmtp.a12.kernel/*`). The [`a12-kernel-bootstrap`](https://github.com/mbackschat/a12-kernel-bootstrap) kit builds it, but installs only the Java artifacts, and this guide covers only the Java path.
+> **This guide covers the Java path.** The kernel also has a TypeScript runtime (`@com.mgmtp.a12.kernel/*`) that runs the same rules in Node.js or the browser; [`SHOWCASE.md`](./SHOWCASE.md) §11 shows it in action.
 
 ## 1. The mental model
 
@@ -129,7 +129,7 @@ In short: an exception means "your model is wrong"; messages mean "this document
 
 ## 9. Beyond this demo — the feature showcases
 
-This Purchase-Order demo is the "hello world". The kernel does a great deal more, and **[`SHOWCASE.md`](./SHOWCASE.md)** has ten standalone, runnable demos (each its own `*Demo` `main`, fresh domain, with code excerpts), **[`COMPARISON.md`](./COMPARISON.md)** weighs the kernel against five mainstream validators (Zod, Pydantic, JSON Schema, Bean Validation, FluentValidation), and **[`KERNEL-SEMANTICS.md`](./KERNEL-SEMANTICS.md)** documents how the validation language evaluates (truth values, missing data, the "required" property, numeric/date rules). The same pipeline (§3) and APIs (`Demos.java`) underlie all of them. Highlights worth a developer's time:
+This Purchase-Order demo is the "hello world". The kernel does a great deal more, and **[`SHOWCASE.md`](./SHOWCASE.md)** has eleven standalone, runnable demos (ten Java `*Demo` mains with fresh domains, plus a TypeScript parity check, all with code excerpts), **[`COMPARISON.md`](./COMPARISON.md)** weighs the kernel against five mainstream validators (Zod, Pydantic, JSON Schema, Bean Validation, FluentValidation), and **[`KERNEL-SEMANTICS.md`](./KERNEL-SEMANTICS.md)** documents how the validation language evaluates (truth values, missing data, the "required" property, numeric/date rules). The same pipeline (§3) and APIs (`Demos.java`) underlie all of them. Highlights worth a developer's time:
 
 - **Structural rules over repeating groups** (`IterationDemo`) — uniqueness with per-row error pointers, `Sum`, filtered `Sum(… Having …)`.
 - **Cross-array logic** (`CrossArrayDemo`) — parallel iteration (join two arrays by an index field), a `$`-correlated filter, and a `CurrentRepetition` row-order check. The "a validator does SQL-like queries" story.
@@ -138,6 +138,7 @@ This Purchase-Order demo is the "hello world". The kernel does a great deal more
 - **Incremental "wizard" validation** (`PartialValidationDemo`) — `validatePart` validates only the current page, holding back errors the user can't yet fix.
 - **Extending the kernel** (`ExtensionDemo`) — a custom condition + a custom field validator in Java, plus free formal type errors.
 - **Model → code** (`CodegenDemo`) — compile one model to standalone Java *and* JavaScript validators.
+- **TypeScript parity** (`gradle runTs`) — run the generated JavaScript in Node.js with the kernel's TypeScript runtime and compare every result with Java.
 - **DSL tour + language surprises** (`DslTourDemo`, `LanguageDemo`) — slicing/regex/tolerance/dates/enums; self-validating computations; enum categories; `Valid()/Invalid()` dates.
 - **Typed accessor overlays** (`TypedAccessorDemo`) — build-time codegen of compile-time-typed, autocompleting views over a document, so model/code drift is a compile error (in an isolated source set).
 
