@@ -330,6 +330,8 @@ Sum(Products*/Quantity Having [Products/ProductName] == "N33") > 100
 
 The **`$` operator** — usable **only inside a filter condition** — pins a reference to the **current outer repetition** of the iterating rule, turning the filter into a *correlated subquery* (e.g. "holidays whose date equals the current stop's ETA"). Not every reference in a filter may be `$`-marked.
 
+`SumOfTerms(Path*, Term)` (new in kernel 31) evaluates a numeric term once per row and adds up the results, e.g. `SumOfTerms(Days*, [Hours] * [Rate] + [Km] * 0.30)`. Like `Sum`, it counts an empty number field as `0`; a row without any data adds nothing. The term may not contain `Having`, `CustomCondition`, `RepetitionNotUnique`, or another `SumOfTerms`.
+
 Aggregation handles missing rows **per function**: **`Sum` substitutes `0`** for an unspecified field, whereas **`MaxValue` / `MinValue` ignore** unspecified fields (a Number list with none specified yields `0`; a Date list yields an empty value). The filter condition may **not** contain `CustomCondition`, `RepetitionNotUnique`, a semantic index, a parallel iteration, or a nested filter.
 
 *Reference: Rules → Rules and repeatability → Filter operator (and → Iteration in filter condition); Arithmetic language constructs → Sum / Maximum and Minimum.*

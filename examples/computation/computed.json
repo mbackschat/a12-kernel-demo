@@ -2,18 +2,21 @@
   "Sheet": {
     "Bonus": 104,
     "Employee": "Dana Lee",
+    "WeekCost": 1059.5,
     "WeekPay": 1040,
     "Days": [
       {
         "Day": "Mon",
         "DayPay": 400,
         "Hours": 8,
+        "Km": 40,
         "Rate": 50.00
       },
       {
         "Day": "Tue",
         "DayPay": 640,
         "Hours": 8,
+        "Km": 25,
         "Rate": 80.00
       }
     ]

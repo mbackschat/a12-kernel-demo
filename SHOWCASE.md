@@ -155,9 +155,9 @@ If you think in SQL: parallel iteration is an *outer join* on the index field, t
 
 ## 4. `ComputationDemo` — Computed / derived fields
 
-**The scenario.** Validation is only half of what the kernel does; the other half is **deriving** values. A weekly *Timesheet* with repeating *Days* needs a per-day pay, a week total, and a tiered bonus — numbers you'd normally compute in service code and hope stay consistent with the data. Here they're part of the model.
+**The scenario.** Validation is only half of what the kernel does; the other half is **deriving** values. A weekly *Timesheet* with repeating *Days* needs a per-day pay, a week total, a tiered bonus, and the week's total cost including mileage — numbers you'd normally compute in service code and hope stay consistent with the data. Here they're part of the model.
 
-**What it shows.** Computations are declared in the model as a `Precondition | Calculation` table, evaluated by the *same generated code* as validation, and applied back onto the (immutable) document. The three computations build on each other — a per-row calc, an aggregate of a computed field, and a tiered calc chosen by mutually-exclusive preconditions:
+**What it shows.** Computations are declared in the model as a `Precondition | Calculation` table, evaluated by the *same generated code* as validation, and applied back onto the (immutable) document. The first three computations build on each other: a per-row calculation, an aggregate of a computed field, and a tiered calculation chosen by mutually exclusive preconditions. The fourth uses `SumOfTerms`, which is new in kernel 31:
 
 ```java
 computation(dm, "/Sheet/Days/DayPayComp", dayPay, alt(null, "[Hours]*[Rate]"));        // per row
@@ -166,6 +166,8 @@ computation(dm, "/Sheet/BonusComp", bonus,                                      
         alt("[WeekPay] >= 1000",                       "RoundDown([WeekPay] * 0.10, 2)"),
         alt("[WeekPay] >= 500 And [WeekPay] < 1000",   "RoundDown([WeekPay] * 0.05, 2)"),
         alt("[WeekPay] < 500",                         "0.00"));
+computation(dm, "/Sheet/WeekCostComp", weekCost,                                        // sum of a per-row term (kernel 31)
+        alt(null, "SumOfTerms(Days*, [Hours] * [Rate] + [Km] * 0.30)"));
 ```
 
 `WeekPay` depends on the computed `DayPay` (a cross-level dependency the engine orders for you), and `Bonus` selects a rate by mutually-exclusive preconditions. Only the inputs are supplied; the engine fills the rest:
@@ -179,10 +181,25 @@ Object bonus   = computed.fieldValue("Sheet[1]/Bonus");     // 104  (>=1000 tier
 
 Note the decimal-place discipline: `Bonus` is a 2-fraction-digit field, so the calculation rounds to 2 places (`RoundDown(..., 2)`) to match — a mismatch is itself an error. `gradle runComputation` feeds only hours and rates, then prints the engine-filled `DayPay` per day, `WeekPay = 1040`, and `Bonus = 104`. Because the calculations live in the model, a business analyst can change the bonus tiers without touching code — and (as §5 shows) the kernel even re-validates the derived values against their own formula.
 
+**`SumOfTerms`: totals without helper fields.** `Sum(Days*/DayPay)` can add up only one field, so the week's pay needs the per-row helper field `DayPay`. `SumOfTerms(Path*, Term)` evaluates any numeric term once per row and adds up the results. `WeekCost` uses it to combine labour and mileage in one expression, with no helper field:
+
+```
+SumOfTerms(Days*, [Hours] * [Rate] + [Km] * 0.30)     ;; 8·50.00 + 40·0.30 + 8·80.00 + 25·0.30 = 1059.50
+```
+
+A few rules apply:
+
+- The path must end in a repeatable group marked with `*`.
+- The term must be numeric. It can't contain `Having`, `CustomCondition`, `RepetitionNotUnique`, or another `SumOfTerms`.
+- An empty number field in a row counts as `0`, as it does in `Sum`. A row with no data at all adds nothing.
+
+The demo checked the last rule against kernel 31.1.1: leaving Tuesday's `Km` empty gives `WeekCost = 1052`.
+
 **Docs.**
 
 - Validation-Language guide → *Computation Rules* → *Computation tables*, *Preconditions*, *Common Precondition*, *Number of decimal places*, *Calculation cycles*
 - Developer guide → *Further Resources* → *Validating a document / Computations on a document* (the `compute(...)` / `applyTo(...)` API)
+- `SumOfTerms` is new in kernel 31. The guide sections above predate it; the editor's function help describes it as *SumOfTerms(Path, Term)*.
 
 ## 5. `LanguageDemo` — Interesting language features
 

@@ -133,7 +133,7 @@ This Purchase-Order demo is the "hello world". The kernel does a great deal more
 
 - **Structural rules over repeating groups** (`IterationDemo`) — uniqueness with per-row error pointers, `Sum`, filtered `Sum(… Having …)`.
 - **Cross-array logic** (`CrossArrayDemo`) — parallel iteration (join two arrays by an index field), a `$`-correlated filter, and a `CurrentRepetition` row-order check. The "a validator does SQL-like queries" story.
-- **Computed/derived fields** (`ComputationDemo`) — `compute()` → `applyTo()` → read back, including a tiered computation and a cross-level aggregate.
+- **Computed/derived fields** (`ComputationDemo`) — `compute()` → `applyTo()` → read back, including a tiered computation, a cross-level aggregate, and kernel 31's `SumOfTerms`.
 - **The immutable Document API** (`DocumentApiDemo`) — copy-on-write `DocumentV2` with structural sharing, auto-vivifying writes, built-in diff, and DM-aware coercion/strip.
 - **Incremental "wizard" validation** (`PartialValidationDemo`) — `validatePart` validates only the current page, holding back errors the user can't yet fix.
 - **Extending the kernel** (`ExtensionDemo`) — a custom condition + a custom field validator in Java, plus free formal type errors.

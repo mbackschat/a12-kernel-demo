@@ -26,12 +26,14 @@ import com.mgmtp.a12.kernel.md.rt.api.IDocumentRtService;
  * declared <em>in the model as data</em> (a {@code Precondition | Calculation} table), evaluated by the same
  * generated code as validation, and applied back onto the immutable document.
  *
- * <p>Domain: a weekly <b>Timesheet</b> with a repeating list of <b>Days</b>. Three computations of increasing
+ * <p>Domain: a weekly <b>Timesheet</b> with a repeating list of <b>Days</b>. Four computations of increasing
  * interest:
  * <ol>
  *   <li><b>per-row</b> {@code DayPay = Hours · Rate};</li>
  *   <li><b>cross-level aggregate</b> {@code WeekPay = Σ DayPay} (depends on the computed day totals);</li>
- *   <li><b>tiered / conditional</b> {@code Bonus} — mutually-exclusive preconditions select 0 % / 5 % / 10 %.</li>
+ *   <li><b>tiered / conditional</b> {@code Bonus} — mutually-exclusive preconditions select 0 % / 5 % / 10 %;</li>
+ *   <li><b>sum of a per-row term</b> {@code WeekCost = SumOfTerms(Days*, Hours · Rate + Km · 0.30)} — kernel 31's
+ *       {@code SumOfTerms} aggregates an arbitrary numeric term per row, so no per-row helper field is needed.</li>
  * </ol>
  */
 public final class ComputationDemo {
@@ -51,12 +53,12 @@ public final class ComputationDemo {
         // Only the inputs are supplied; DayPay / WeekPay / Bonus are left for the kernel to compute.
         DocumentV2 input = DocumentV2.empty(DM_ID)
                 .withFieldValue("Sheet[1]/Employee", "Dana Lee")
-                .withFieldValue("Sheet[1]/Days[1]/Day", "Mon").withFieldValue("Sheet[1]/Days[1]/Hours", BigDecimal.valueOf(8)).withFieldValue("Sheet[1]/Days[1]/Rate", new BigDecimal("50.00"))
-                .withFieldValue("Sheet[1]/Days[2]/Day", "Tue").withFieldValue("Sheet[1]/Days[2]/Hours", BigDecimal.valueOf(8)).withFieldValue("Sheet[1]/Days[2]/Rate", new BigDecimal("80.00"));
+                .withFieldValue("Sheet[1]/Days[1]/Day", "Mon").withFieldValue("Sheet[1]/Days[1]/Hours", BigDecimal.valueOf(8)).withFieldValue("Sheet[1]/Days[1]/Rate", new BigDecimal("50.00")).withFieldValue("Sheet[1]/Days[1]/Km", BigDecimal.valueOf(40))
+                .withFieldValue("Sheet[1]/Days[2]/Day", "Tue").withFieldValue("Sheet[1]/Days[2]/Hours", BigDecimal.valueOf(8)).withFieldValue("Sheet[1]/Days[2]/Rate", new BigDecimal("80.00")).withFieldValue("Sheet[1]/Days[2]/Km", BigDecimal.valueOf(25));
         Demos.writeDoc(ser, FOLDER, "input.json", input);
 
-        System.out.println("\n=== inputs (DayPay / WeekPay / Bonus empty) ===");
-        System.out.println("  Mon: 8 h @ 50.00    Tue: 8 h @ 80.00");
+        System.out.println("\n=== inputs (DayPay / WeekPay / Bonus / WeekCost empty) ===");
+        System.out.println("  Mon: 8 h @ 50.00, 40 km    Tue: 8 h @ 80.00, 25 km");
 
         IDocumentComputationResult comp = rt.compute(input, cfg);
         DocumentV2 computed = comp.applyTo(input);   // immutable: returns a NEW document carrying the derived values
@@ -72,6 +74,7 @@ public final class ComputationDemo {
         System.out.println("  Days[2]/DayPay = " + computed.fieldValue("Sheet[1]/Days[2]/DayPay") + "   (8 · 80.00)");
         System.out.println("  WeekPay        = " + computed.fieldValue("Sheet[1]/WeekPay") + "  (Σ day pay = 1040.00)");
         System.out.println("  Bonus          = " + computed.fieldValue("Sheet[1]/Bonus") + "   (>=1000 tier -> 10% of 1040.00)");
+        System.out.println("  WeekCost       = " + computed.fieldValue("Sheet[1]/WeekCost") + "  (SumOfTerms: 8·50.00 + 40·0.30 + 8·80.00 + 25·0.30)");
     }
 
     static DocumentModel build() {
@@ -82,12 +85,15 @@ public final class ComputationDemo {
                 .ft(NumberTypeBuilder.builder().modify(b -> b.maxFractionalDigits(2))).build();
         Field bonus = FieldBuilder.with(dm).name("/Sheet/Bonus")
                 .ft(NumberTypeBuilder.builder().modify(b -> b.maxFractionalDigits(2))).build();
+        Field weekCost = FieldBuilder.with(dm).name("/Sheet/WeekCost")
+                .ft(NumberTypeBuilder.builder().modify(b -> b.maxFractionalDigits(2))).build();
 
         GroupBuilder.with(dm).name("/Sheet/Days").repeat(7).build();
         FieldBuilder.with(dm).name("/Sheet/Days/Day").ft(StringTypeBuilder.builder()).build();
         FieldBuilder.with(dm).name("/Sheet/Days/Hours").ft(NumberTypeBuilder.builder()).build();
         FieldBuilder.with(dm).name("/Sheet/Days/Rate")
                 .ft(NumberTypeBuilder.builder().modify(b -> b.maxFractionalDigits(2))).build();
+        FieldBuilder.with(dm).name("/Sheet/Days/Km").ft(NumberTypeBuilder.builder()).build();
         Field dayPay = FieldBuilder.with(dm).name("/Sheet/Days/DayPay")
                 .ft(NumberTypeBuilder.builder().modify(b -> b.maxFractionalDigits(2))).build();
 
@@ -102,6 +108,10 @@ public final class ComputationDemo {
                 alt("[WeekPay] >= 1000", "RoundDown([WeekPay] * 0.10, 2)"),
                 alt("[WeekPay] >= 500 And [WeekPay] < 1000", "RoundDown([WeekPay] * 0.05, 2)"),
                 alt("[WeekPay] < 500", "0.00"));
+
+        // 4) sum of a per-row term: labour plus mileage in one expression. Sum() can only add up one field,
+        //    so without SumOfTerms (new in kernel 31) this needs a computed helper field per row, like DayPay.
+        computation(dm, "/Sheet/WeekCostComp", weekCost, alt(null, "SumOfTerms(Days*, [Hours] * [Rate] + [Km] * 0.30)"));
 
         return dm;
     }

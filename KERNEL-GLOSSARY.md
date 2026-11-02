@@ -63,6 +63,9 @@ The terms you'll meet reading this demo, [`SHOWCASE.md`](./SHOWCASE.md), and the
 - **`Having` (filter operator)** — restricts an aggregate to the rows matching a predicate: `Sum(Lines*/Qty Having [Lines/Rush]==True)`.
 
   *Shown in* `IterationDemo` and `CrossArrayDemo`  ·  *Docs:* Validation-Language guide → *Operators and language constructs → Functional language constructs*
+- **`SumOfTerms`** — new in kernel 31: evaluates a numeric term once per row of a `*`-list and adds up the results, so a total needs no per-row helper field: `SumOfTerms(Days*, [Hours] * [Rate] + [Km] * 0.30)`.
+
+  *Shown in* `ComputationDemo`  ·  *Docs:* newer than the guide sections cited here; see [`KERNEL-SEMANTICS.md`](./KERNEL-SEMANTICS.md) → *The filter operator `Having`, the `$` correlation, and aggregation*
 - **`$`-operator** — inside a `Having`, pins a reference to the *current* row of the iterating group while filtering another list (a correlated subquery). Must precede the whole path: `[$/Shipment/Stops/Eta]`.
 
   *Shown in* `CrossArrayDemo`  ·  *Docs:* Validation-Language guide → *Operators and language constructs → Functional language constructs*

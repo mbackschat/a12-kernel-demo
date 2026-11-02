@@ -14,7 +14,7 @@ Each demo gets its own folder, **named after the demo** (not the model), holding
 |---|---|---|---|
 | [`purchase-order/`](./purchase-order) | `purchase-order.dm.json` + `valid/invalid/large.json` | basic fields + rules (annotated walkthrough below) | base demo |
 | [`iteration/`](./iteration) | `playlist.dm.json` + `balanced/repeated-title/too-long.json` | repeating group: uniqueness, Σ, filtered Σ | `IterationDemo` |
-| [`computation/`](./computation) | `timesheet.dm.json` + `input/computed.json` | computed fields (inputs vs. the computed result) | `ComputationDemo` |
+| [`computation/`](./computation) | `timesheet.dm.json` + `input/computed.json` | computed fields (inputs vs. the computed result), including a `SumOfTerms` total | `ComputationDemo` |
 | [`dsl-tour/`](./dsl-tour) | `event-registration.dm.json` + `complete/incomplete.json` | DSL tour (slicing, regex, dates, enums, …) | `DslTourDemo` |
 | [`extension/`](./extension) | `product-catalog.dm.json` + `valid/malformed.json` | custom condition + custom field type | `ExtensionDemo` |
 | [`cross-array/`](./cross-array) | `shipment-routing.dm.json` + `clean/problems.json` | cross-array: parallel iteration, correlated `Having` filter, row-order | `CrossArrayDemo` |

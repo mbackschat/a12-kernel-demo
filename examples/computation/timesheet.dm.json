@@ -73,6 +73,19 @@
                 }
               },
               {
+                "type": "Field",
+                "id": "/Sheet/WeekCost",
+                "name": "WeekCost",
+                "Field": {
+                  "fieldType": {
+                    "type": "NumberType",
+                    "NumberType": {
+                      "maxFractionalDigits": 2
+                    }
+                  }
+                }
+              },
+              {
                 "type": "Group",
                 "id": "/Sheet/Days",
                 "name": "Days",
@@ -109,6 +122,16 @@
                           "NumberType": {
                             "maxFractionalDigits": 2
                           }
+                        }
+                      }
+                    },
+                    {
+                      "type": "Field",
+                      "id": "/Sheet/Days/Km",
+                      "name": "Km",
+                      "Field": {
+                        "fieldType": {
+                          "type": "NumberType"
                         }
                       }
                     },
@@ -184,6 +207,25 @@
                     {
                       "operation": "0.00",
                       "precondition": "[WeekPay] < 500"
+                    }
+                  ],
+                  "errorMessage": [
+                    {
+                      "locale": "en_US",
+                      "text": "errorText"
+                    }
+                  ]
+                }
+              },
+              {
+                "type": "Computation",
+                "id": "/Sheet/WeekCostComp",
+                "name": "WeekCostComp",
+                "Computation": {
+                  "computedFieldRelPath": "../WeekCost",
+                  "computationAlternatives": [
+                    {
+                      "operation": "SumOfTerms(Days*, [Hours] * [Rate] + [Km] * 0.30)"
                     }
                   ],
                   "errorMessage": [
