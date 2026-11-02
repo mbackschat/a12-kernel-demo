@@ -435,10 +435,10 @@ const computed = service.compute(input).appliedTo(input); // WeekPay, Bonus, Wee
   …
   ✔ same messages as Java
 …
-All results match the Java runtime.
+All 8 results match the Java runtime.
 ```
 
-Seven documents and one computation are compared: severity, message type, error code, field, rule, and the rendered English text all match. So do the computed values, including kernel 31's `SumOfTerms`. If anything differs, the task fails.
+Seven documents and one computation are compared: severity, message type, error code, field, rule, and the rendered English text all match. So does every field of the computed timesheet, including kernel 31's `SumOfTerms` total. If anything differs, or if fewer checks run than Java recorded, the task fails.
 
 A few things are worth knowing when you use the TypeScript runtime yourself:
 

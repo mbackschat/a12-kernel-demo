@@ -32,7 +32,8 @@ import com.mgmtp.a12.kernel.md.rt.api.IMessage;
  * document model</i>: "There is no such an API provided by Kernel in TypeScript"), so Java compiles every model
  * the Node side runs. Only {@link IValidationCodeGeneratorConfig.JsCodeGenConfig#STANDARD} output can be loaded
  * by the TypeScript {@code GeneratedCodeAccessorFactory.createScriptAccessor}; {@code CodegenDemo}'s
- * {@code WRAPPED_IN_FUNCTION_EXTENDED} variant (a UMD module plus typings) is rejected there.
+ * {@code WRAPPED_IN_FUNCTION_EXTENDED} variant (a UMD module plus typings) fails to load there with a
+ * {@code TypeError} (kernel 31.1.1, measured 2026-11-02).
  *
  * <p>Writes to {@code output/typescript/generated/}: one {@code <model-id>.js} per model, and
  * {@code java-results.tsv}, the hand-off file {@code ts/src/parity.ts} reads. It is tab-separated, one record per
@@ -41,12 +42,13 @@ import com.mgmtp.a12.kernel.md.rt.api.IMessage;
  * document  &lt;demo&gt;/&lt;file&gt;.json  &lt;model-id&gt;  &lt;noErrorOccurred&gt;
  * message   &lt;severity&gt;  &lt;messageType&gt;  &lt;errorCode&gt;  &lt;field&gt;  &lt;rule path&gt;  &lt;text&gt;
  * compute   &lt;demo&gt;/&lt;input&gt;.json  &lt;model-id&gt;  &lt;demo&gt;/&lt;computed&gt;.json
+ * end       &lt;number of document and compute records&gt;
  * </pre>
- * {@code message} records belong to the preceding {@code document}.
+ * {@code message} records belong to the preceding {@code document}. Lines end in {@code \n} on every platform.
  */
 public final class JsExport {
 
-    static final Path GENERATED = Demos.OUT.resolve("typescript").resolve("generated");
+    private static final Path GENERATED = Demos.OUT.resolve("typescript").resolve("generated");
 
     /** A persisted model and the documents to validate against it, all as written by the owning demo. */
     private record Case(String folder, String dmId, List<String> documents) {
@@ -64,6 +66,7 @@ public final class JsExport {
         Files.createDirectories(GENERATED);
         DocumentProcessingConfig cfg = DocumentProcessingConfig.builder(Locale.US).build();
         List<String> records = new ArrayList<>();
+        int checks = 0;
 
         for (Case c : CASES) {
             IDocumentModel model = loadModel(Demos.OUT.resolve(c.folder()).resolve(c.dmId() + ".dm.json"));
@@ -77,6 +80,7 @@ public final class JsExport {
                 String file = c.folder() + "/" + name + ".json";
                 IDocumentValidationResult result = rt.validateFull(loadDocument(serializer, c.dmId(), file), cfg);
                 records.add(record("document", file, c.dmId(), String.valueOf(result.noErrorOccurred())));
+                checks++;
                 for (IMessage m : result.getMessages()) {
                     records.add(record("message", m.getSeverity().toString(), m.getMessageType().toString(),
                             m.getErrorCode(), Demos.pretty(m.getErrorFieldPointer()), m.getRulePath().orElse(""),
@@ -86,9 +90,11 @@ public final class JsExport {
         }
         records.add(record("compute", ComputationDemo.FOLDER + "/input.json", ComputationDemo.DM_ID,
                 ComputationDemo.FOLDER + "/computed.json"));
+        checks++;
+        records.add(record("end", String.valueOf(checks)));
 
         Path tsv = GENERATED.resolve("java-results.tsv");
-        Files.write(tsv, records, StandardCharsets.UTF_8);
+        Files.writeString(tsv, String.join("\n", records) + "\n", StandardCharsets.UTF_8);
         System.out.println("recorded the Java results -> " + tsv);
     }
 

@@ -50,6 +50,11 @@ function formatPath(path: EntityInstancePath): string {
 	return path.map((segment, i) => (i < path.length - 1 ? `${segment.elementName}[${segment.index}]` : segment.elementName)).join("/");
 }
 
+/** Java writes tab-free, single-line TSV cells (JsExport#record), so the TypeScript side normalizes the same way. */
+function cell(value: string): string {
+	return value.replace(/[\t\r\n]+/g, " ");
+}
+
 /** The fields both runtimes report, in the column order of java-results.tsv. */
 function describe(message: Message): string[] {
 	return [
@@ -59,32 +64,56 @@ function describe(message: Message): string[] {
 		formatPath(message.entityInstance),
 		message.rulePath ?? "",
 		localize(...message.errorText) ?? "",
-	];
+	].map(cell);
 }
 
+/**
+ * Compares as multisets: the kernel documents no message order. (Both runtimes did emit the same order when
+ * this was measured on 2026-11-02 with kernel 31.1.1, so an order-only difference would be new.)
+ */
 function sameMessages(actual: string[][], expected: string[][]): boolean {
 	const normalize = (rows: string[][]) => rows.map((row) => row.join("\t")).sort();
 	return JSON.stringify(normalize(actual)) === JSON.stringify(normalize(expected));
 }
 
-/** Reads one field value from a plain document; repeatable groups are arrays, indexes are 1-based. */
-function valueAt(document: Document, path: EntityInstancePath): unknown {
-	let node: unknown = document;
-	for (const { elementName, index } of path) {
-		const next = (node as Record<string, unknown> | undefined)?.[elementName];
-		node = Array.isArray(next) ? next[index - 1] : next;
+/** Flattens a plain document into `Group[1]/Field` → value, the path format the demos print. */
+function flatten(node: unknown, prefix = "", out = new Map<string, unknown>()): Map<string, unknown> {
+	for (const [name, value] of Object.entries(node as Record<string, unknown>)) {
+		const rows = Array.isArray(value) ? value : value !== null && typeof value === "object" ? [value] : undefined;
+		if (rows) {
+			rows.forEach((row, i) => flatten(row, `${prefix}${name}[${i + 1}]/`, out));
+		} else {
+			out.set(`${prefix}${name}`, value);
+		}
 	}
-	return node;
+	return out;
 }
 
+/** Numbers compare by value: JSON keeps no decimal scale, so Java's 50.00 and TypeScript's 50 are the same rate. */
+function sameValue(a: unknown, b: unknown): boolean {
+	if (typeof a === "number" || typeof b === "number") {
+		return a !== undefined && b !== undefined && a !== null && b !== null && Number(a) === Number(b);
+	}
+	return a === b;
+}
+
+let checks = 0;
 let mismatches = 0;
 
 function verdict(same: boolean, what: string): void {
+	checks++;
 	if (same) {
 		console.log(`  ✔ same ${what} as Java`);
 	} else {
 		mismatches++;
 		console.log(`  ✘ ${what} differ from Java`);
+	}
+}
+
+function printMessages(messages: string[][]): void {
+	for (const [severity, type, code, field, rule, text] of messages) {
+		console.log(`  [${severity.padEnd(7)} ${type.padEnd(13)}] ${code.padEnd(16)} ${text}`);
+		console.log(`        at field: ${field}${rule ? `   rule: ${rule}` : ""}`);
 	}
 }
 
@@ -96,40 +125,54 @@ function validate(file: string, modelId: string, javaNoError: boolean, javaMessa
 	if (messages.length === 0) {
 		console.log("  (no messages)");
 	}
-	for (const [severity, type, code, field, rule, text] of messages) {
-		console.log(`  [${severity.padEnd(7)} ${type.padEnd(13)}] ${code.padEnd(16)} ${text}`);
-		console.log(`        at field: ${field}${rule ? `   rule: ${rule}` : ""}`);
+	printMessages(messages);
+	const same = result.noErrorOccurred === javaNoError && sameMessages(messages, javaMessages);
+	verdict(same, "messages");
+	if (!same) {
+		console.log(`  Java reported (noErrorOccurred: ${javaNoError}):`);
+		printMessages(javaMessages);
 	}
-	verdict(result.noErrorOccurred === javaNoError && sameMessages(messages, javaMessages), "messages");
 }
 
 function compute(inputFile: string, modelId: string, javaComputedFile: string): void {
 	const input = readDocument(inputFile);
 	const result = serviceFor(modelId).compute(input);
 	const computed = result.appliedTo(input);
-	const javaComputed = readDocument(javaComputedFile);
 
 	console.log(`\n=== ${inputFile} → compute() ===`);
-	let same = result.noErrorOccurred;
+	// A JSON round trip turns runtime number types (big.js) into what a client would send or store.
+	const ours = flatten(JSON.parse(JSON.stringify(computed)));
+	const java = flatten(readDocument(javaComputedFile));
 	for (const field of result.computedFieldInstancesWithoutErrors) {
-		const ours = Number(field.value);
-		const java = Number(valueAt(javaComputed, field.path));
-		same &&= ours === java;
-		console.log(`  ${formatPath(field.path).padEnd(22)} = ${String(ours).padEnd(8)} (Java: ${java})`);
+		const path = formatPath(field.path);
+		console.log(`  ${path.padEnd(22)} = ${String(ours.get(path)).padEnd(8)} (Java: ${java.get(path)})`);
 	}
-	verdict(same, "computed values");
+	// The whole documents are compared, so a field that only one runtime computed counts as a difference.
+	const differing = [...new Set([...ours.keys(), ...java.keys()])].sort().filter((path) => !sameValue(ours.get(path), java.get(path)));
+	for (const path of differing) {
+		console.log(`  differs: ${path}   TypeScript: ${ours.get(path)}   Java: ${java.get(path)}`);
+	}
+	verdict(result.noErrorOccurred && differing.length === 0, "computed fields");
 
-	const target = new URL(`typescript/${modelId}-computed-by-ts.json`, OUTPUT);
-	writeFileSync(target, `${JSON.stringify(computed, null, 2)}\n`);
-	console.log(`  wrote ${target.pathname.split("/output/")[1]}`);
+	const relative = `typescript/${modelId}-computed-by-ts.json`;
+	writeFileSync(new URL(relative, OUTPUT), `${JSON.stringify(computed, null, 2)}\n`);
+	console.log(`  wrote output/${relative}`);
 }
 
-// java-results.tsv: a `document` line is followed by the `message` lines Java reported for it.
+// java-results.tsv: a `document` line is followed by the `message` lines Java reported for it; the closing
+// `end` line carries the number of checks, so a truncated file fails instead of passing on fewer checks.
 type Pending = { file: string; modelId: string; noError: boolean; messages: string[][] };
 let pending: Pending | undefined;
-const flush = () => pending && validate(pending.file, pending.modelId, pending.noError, pending.messages);
+let expectedChecks: number | undefined;
 
-for (const line of readFileSync(new URL("java-results.tsv", GENERATED), "utf8").split("\n")) {
+function flush(): void {
+	if (pending) {
+		validate(pending.file, pending.modelId, pending.noError, pending.messages);
+		pending = undefined;
+	}
+}
+
+for (const line of readFileSync(new URL("java-results.tsv", GENERATED), "utf8").split(/\r?\n/)) {
 	const [kind, ...fields] = line.split("\t");
 	if (kind === "document") {
 		flush();
@@ -138,11 +181,19 @@ for (const line of readFileSync(new URL("java-results.tsv", GENERATED), "utf8").
 		pending?.messages.push(fields);
 	} else if (kind === "compute") {
 		flush();
-		pending = undefined;
 		compute(fields[0], fields[1], fields[2]);
+	} else if (kind === "end") {
+		flush();
+		expectedChecks = Number(fields[0]);
+	} else if (kind !== "") {
+		throw new Error(`java-results.tsv: unknown record type "${kind}"`);
 	}
 }
 flush();
 
-console.log(mismatches === 0 ? "\nAll results match the Java runtime." : `\n${mismatches} result(s) differ from the Java runtime.`);
+if (expectedChecks === undefined || checks !== expectedChecks) {
+	mismatches++;
+	console.log(`\n✘ java-results.tsv announced ${expectedChecks ?? "no"} checks, but ${checks} ran.`);
+}
+console.log(mismatches === 0 ? `\nAll ${checks} results match the Java runtime.` : `\n${mismatches} result(s) differ from the Java runtime.`);
 process.exitCode = mismatches === 0 ? 0 : 1;

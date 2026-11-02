@@ -50,7 +50,7 @@ public final class ComputationDemo {
         IDocumentV2Serializer ser = Demos.docSerializer(model);
         DocumentProcessingConfig cfg = DocumentProcessingConfig.builder(Locale.US).build();
 
-        // Only the inputs are supplied; DayPay / WeekPay / Bonus are left for the kernel to compute.
+        // Only the inputs are supplied; DayPay / WeekPay / Bonus / WeekCost are left for the kernel to compute.
         DocumentV2 input = DocumentV2.empty(DM_ID)
                 .withFieldValue("Sheet[1]/Employee", "Dana Lee")
                 .withFieldValue("Sheet[1]/Days[1]/Day", "Mon").withFieldValue("Sheet[1]/Days[1]/Hours", BigDecimal.valueOf(8)).withFieldValue("Sheet[1]/Days[1]/Rate", new BigDecimal("50.00")).withFieldValue("Sheet[1]/Days[1]/Km", BigDecimal.valueOf(40))

@@ -189,11 +189,14 @@ tasks.register('tsInstall', Exec) {
     group = 'a12-showcase'
     description = 'Install the TypeScript showcase dependencies with pnpm.'
     dependsOn 'tsVendor'
-    def facadeTarball = file('ts/vendor/com.mgmtp.a12.kernel-kernel-md-facade-31.1.1.tgz')
+    // Checks the kit's directory rather than ts/vendor/, so tarballs left there by an earlier run can't hide a
+    // missing or wrong A12_BOOTSTRAP_HOME (tsVendor just copies nothing when its source directory is absent).
+    def facadeTarball = "com.mgmtp.a12.kernel-kernel-md-facade-${kernelVersion}.tgz"
     doFirst {
-        if (!facadeTarball.isFile()) {
-            throw new GradleException("No A12 npm tarballs in ${bootstrapHome.get()}/npm-artifacts. Run the " +
-                    "a12-kernel-bootstrap kit first, or set A12_BOOTSTRAP_HOME to its working directory.")
+        def npmArtifacts = file("${bootstrapHome.get()}/npm-artifacts")
+        if (!new File(npmArtifacts, facadeTarball).isFile()) {
+            throw new GradleException("${facadeTarball} not found in ${npmArtifacts}. Run the a12-kernel-bootstrap " +
+                    "kit for this release first, or set A12_BOOTSTRAP_HOME to its working directory.")
         }
     }
     workingDir 'ts'

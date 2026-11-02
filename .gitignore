@@ -7,5 +7,3 @@ output/
 .DS_Store
 ts/node_modules/
 ts/vendor/
-# pnpm would pin the vendored A12 tarballs by hash, and that hash differs per platform (gzip header)
-ts/pnpm-lock.yaml
