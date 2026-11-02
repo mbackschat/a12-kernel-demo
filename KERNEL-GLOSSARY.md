@@ -98,13 +98,13 @@ The terms you'll meet reading this demo, [`SHOWCASE.md`](./SHOWCASE.md), and the
   *Shown in* `ExtensionDemo`  ·  *Docs:* Validation-Language guide → *Appendix → Validation and formal validation*
 - **`IMessage`** — one validation result: `getSeverity()`, `getErrorCode()`, `getErrorText()`, `getMessageType()`, `getErrorFieldPointer()` (which field), `getRulePath()` (which rule).
 
-  *Printed by every demo via `Demos.report`.*  ·  *Docs:* Developer guide → *Further Resources → Validating a document*
+  *Printed by every demo via `Demos.report`.*  ·  *Docs:* Developer guide → *Entry points to kernel-md → Validating a document*
 - **`messageType`** — `VALUE_ERROR` (a value is wrong) vs `OMISSION_ERROR` (something required is missing).
 
-  *Docs:* Developer guide → *Further Resources → Validating a document*
+  *Docs:* Developer guide → *Entry points to kernel-md → Validating a document*
 - **`noErrorOccurred()`** — `true` when there are no `ERROR`-severity messages (WARNING/INFO don't count).
 
-  *The base demo's `large` document is VALID despite a WARNING.*  ·  *Docs:* Developer guide → *Further Resources → Validating a document*
+  *The base demo's `large` document is VALID despite a WARNING.*  ·  *Docs:* Developer guide → *Entry points to kernel-md → Validating a document*
 - **Dynamic vs static code generation** — *dynamic* (this demo): the kernel generates + compiles validation code on first use and caches it. *Static*: pre-generate the code at build time and ship it.
 
   *Generating standalone code is shown in `CodegenDemo`.*  ·  *Docs:* Developer guide → *Getting started* and *Architecture*
@@ -137,7 +137,7 @@ The terms you'll meet reading this demo, [`SHOWCASE.md`](./SHOWCASE.md), and the
   *Shown in* `ExtensionDemo`  ·  *Docs:* Developer guide → *Custom Field Type*
 - **Code generation** — `generateValidationCode` compiles a model to standalone Java / JavaScript / Groovy validators.
 
-  *Shown in* `CodegenDemo`  ·  *Docs:* Developer guide → *Further Resources → Generate validation code from document model*
+  *Shown in* `CodegenDemo`  ·  *Docs:* Developer guide → *Entry points to kernel-md → Generate validation code from document model*
 - **Typed accessors (overlay)** — generated, compile-time-typed view/pointer classes for a specific model, so navigating a document is autocompleted and DM drift becomes a compile error.
 
   *Shown in* `TypedAccessorDemo`  ·  *Docs:* Developer guide → *Typed Accessor Classes for Compile-Time Type Checks*
@@ -146,7 +146,7 @@ The terms you'll meet reading this demo, [`SHOWCASE.md`](./SHOWCASE.md), and the
   *Docs:* Developer guide → *Mapping*
 - **Model migration** — upgrading older DocumentModel JSON to the version your kernel supports (the DM JSON format is versioned independently of the kernel).
 
-  *Docs:* Developer guide → *Further Resources → Migration of document models*
+  *Docs:* Developer guide → *Entry points to kernel-md → Migration of document models*
 
 ## Evaluation semantics
 

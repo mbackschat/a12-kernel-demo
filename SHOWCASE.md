@@ -201,7 +201,7 @@ The demo checked the last rule against kernel 31.1.1: leaving Tuesday's `Km` emp
 **Docs.**
 
 - Validation-Language guide → *Computation Rules* → *Computation tables*, *Preconditions*, *Common Precondition*, *Number of decimal places*, *Calculation cycles*
-- Developer guide → *Further Resources* → *Validating a document / Computations on a document* (the `compute(...)` / `applyTo(...)` API)
+- Developer guide → *Entry points to kernel-md* → *Validating a document / Computations on a document* (the `compute(...)` / `applyTo(...)` API)
 - `SumOfTerms` is new in kernel 31. The guide sections above predate it; the editor's function help describes it as *SumOfTerms(Path, Term)*.
 
 ## 5. `LanguageDemo` — Interesting language features
@@ -325,7 +325,7 @@ Each line is a distinct capability: **auto-vivification** means you set a deep p
 **Docs.**
 
 - Developer guide → *Document API V2 (Java)* → *Updating Documents and Groups*, *DocumentPointer*, *Additional Utilities*
-- Developer guide → *Further Resources*
+- Developer guide → *Document API V2 (Java)* → *Further Resources*
 
 ## 8. `PartialValidationDemo` — Incremental "wizard" validation
 
@@ -363,7 +363,7 @@ Each call returns a ZIP:
 
 **Docs.**
 
-- Developer guide → *Further Resources* → *Generate validation code from document model*
+- Developer guide → *Entry points to kernel-md* → *Generate validation code from document model*
 - Developer guide → *Supported Languages*, and *Introduction* → *Architecture* and *Artifacts* (Java vs TS/JS artifacts)
 
 ## 10. `TypedAccessorDemo` — Typed accessor overlays
