@@ -3,6 +3,7 @@
     "Day": 31,
     "FuelType": "DIESEL",
     "Month": 2,
+    "RegisteredFuel": "Diesel",
     "Score1": 4,
     "Score2": 5,
     "TotalScore": 99,

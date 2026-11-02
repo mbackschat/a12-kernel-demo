@@ -20,10 +20,10 @@ Each demo gets its own folder, **named after the demo** (not the model), holding
 | [`cross-array/`](./cross-array) | `shipment-routing.dm.json` + `clean/problems.json` | cross-array: parallel iteration, correlated `Having` filter, row-order | `CrossArrayDemo` |
 | [`document-api/`](./document-api) | `recipe.dm.json` + `recipe-built/recipe-updated.json` | (no rules) immutable DocumentV2: structural sharing, diff, DM-aware coercion | `DocumentApiDemo` |
 | [`partial-validation/`](./partial-validation) | `loan-application.dm.json` + `application.json` | incremental/wizard validation (`validatePart` per page) | `PartialValidationDemo` |
-| [`language/`](./language) | `vehicle-inspection.dm.json` + `clean/surprises.json` | self-validating computation, enum categories `->`, `Valid()/Invalid()` | `LanguageDemo` |
+| [`language/`](./language) | `vehicle-inspection.dm.json` + `clean/surprises.json` | self-validating computation, enum categories `->`, `Valid()/Invalid()`, enum vs. string comparison | `LanguageDemo` |
 | [`typed-accessor/`](./typed-accessor) | `subscription.dm.json` + `subscription.json` | compile-time-typed, autocompleting document access (generated overlays) | `TypedAccessorDemo` |
 
-The `purchase-order` model is walked through in detail below as a first read. The others share the same JSON shape with richer features worth opening alongside `SHOWCASE.md`: a repeating group (`iteration/`'s `playlist` model — note `Group.repeatability` and the `RepetitionNotUnique` rule), `Computation` nodes (`computation/`'s `timesheet` — derived fields, and the `…-computed.json` document showing the filled-in results), an `EnumerationType` with bilingual value labels (`dsl-tour/`'s `event-registration`), and a `CustomFieldType` field (`extension/`'s `product-catalog`).
+The `purchase-order` model is walked through in detail below as a first read. The others share the same JSON shape with richer features worth opening alongside `SHOWCASE.md`: a repeating group (`iteration/`'s `playlist` model — note `Group.repeatability` and the `RepetitionNotUnique` rule), `Computation` nodes (`computation/`'s `timesheet` — derived fields, and the `computed.json` document showing the filled-in results), an `EnumerationType` with bilingual value labels (`dsl-tour/`'s `event-registration`), and a `CustomFieldType` field (`extension/`'s `product-catalog`).
 
 ---
 

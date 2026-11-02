@@ -111,6 +111,16 @@
               },
               {
                 "type": "Field",
+                "id": "/Inspection/RegisteredFuel",
+                "name": "RegisteredFuel",
+                "Field": {
+                  "fieldType": {
+                    "type": "StringType"
+                  }
+                }
+              },
+              {
+                "type": "Field",
                 "id": "/Inspection/Score1",
                 "name": "Score1",
                 "Field": {
@@ -221,6 +231,27 @@
                     {
                       "locale": "de_DE",
                       "text": "Verbrenner benötigen eine Abgasbescheinigung."
+                    }
+                  ]
+                }
+              },
+              {
+                "type": "Rule",
+                "id": "/Inspection/FuelMismatchRule",
+                "name": "FuelMismatchRule",
+                "Rule": {
+                  "errorEntityRelPath": "../FuelType",
+                  "errorCode": "FUEL_MISMATCH",
+                  "errorCondition": "FieldFilled(RegisteredFuel) And [FuelType] != [RegisteredFuel]",
+                  "severity": "ERROR",
+                  "errorMessage": [
+                    {
+                      "locale": "en_US",
+                      "text": "The fuel type does not match the vehicle registration."
+                    },
+                    {
+                      "locale": "de_DE",
+                      "text": "Die Kraftstoffart stimmt nicht mit der Zulassung überein."
                     }
                   ]
                 }

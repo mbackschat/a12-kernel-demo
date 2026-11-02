@@ -3,6 +3,7 @@
     "Day": 15,
     "FuelType": "ELECTRIC",
     "Month": 3,
+    "RegisteredFuel": "ELECTRIC",
     "Score1": 4,
     "Score2": 5,
     "TotalScore": 9,

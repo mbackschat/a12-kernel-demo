@@ -23,7 +23,7 @@ Which operators are legal on a field, and how a missing or mismatched value beha
 | **Number** | **scale** = max fractional digits; min/max value; `trait` = amount / percent / permille | number | Scale **gates `==`/`!=`** (mismatched scale is a *parse-time* error — round one side first); an unspecified number is substituted with **`0`** in comparisons (but *ignored* by min/max); orderable with `< > <= >=`. |
 | **Boolean** | True / False / unset | boolean | Three states; an unspecified value leaves a comparison **not evaluated**; `[F] == True` is **not** the same as `FieldFilled(F)`. |
 | **Confirm** | True / unset (a checkbox) | confirm | Distinct from Boolean: an unspecified value is treated as **`False`** in comparisons; compares only to another Confirm or the constant `True`. |
-| **Enumeration** | `values`; *with* or *without* localized **texts**; **categories** | enum value | Compared by the **stored value**, not the display text (`[Country]=="F"`); a *text-bearing* enum cannot be compared with a plain string or a *textless* enum; `->` reads a value's **category** attribute. |
+| **Enumeration** | `values`; *with* or *without* localized **texts**; **categories** | enum value | Compared by the **stored value**, not the display text (`[Country]=="F"`); comparing with a string field or another enum also compares stored values (kernel 30 rejected comparing a *text-bearing* enum with a string field or a *textless* enum; kernel 31 allows it); `->` reads a value's **category** attribute. |
 | **Date** | `format`; `datePrecision` = full / day- / month- / year-optional | date | Constants are `DD.MM.YYYY` (day-first); a **string literal matching that format parses as a date** (so it breaks string concatenation); precision gates `DayFromDate`/`MonthFromDate`/… and `ValueAsDate`. |
 | **DateTime** *(extends Date)* | — | date-time | The required operand for `DifferenceIn{Hours,Minutes,Seconds}`, `Add{Hours,…}`, `*FromTime`, and `Now`. |
 | **Time** *(extends Date)* | — | time | The operand for `HoursFromTime` / `MinutesFromTime` / `SecondsFromTime`. |
@@ -289,7 +289,8 @@ Invalid(Date(Day, Month, Year))   ;; fires on 31.11, 30.02, an unfilled part, �
 ## 8. Enumerations
 
 - Rule conditions compare the stored enumeration **value**, not the displayed text: write `[Country] == "F"`, not `[Country] == "France"`.
-- An enumeration that defines localized texts cannot be compared with a plain string or with an enumeration that has no texts; comparing two text-bearing enumerations also requires their values and texts to be mutually consistent.
+- Comparing an enumeration with a string **field**, or with another enumeration, also compares stored values. A string field that holds the display text (`"France"`) doesn't match the value `"F"`.
+- Kernel 30 rejected some of these comparisons while generating code (`MVK_INVALID_COMPARE_ENUM_TO_STRING`): an enumeration with localized texts compared with a string field or with an enumeration without texts. Kernel 31 removed that check, so such rules now run. `LanguageDemo` shows the effect (`FUEL_MISMATCH`).
 - Enumeration values can carry named category attributes, read with the `->` operator: `[Country -> AdministrationArea] != "EU"`.
 
 *Reference: Operators and language constructs → Comparison operations → Comparing strings and enumerations; The Field value operator.*

@@ -25,7 +25,7 @@ import com.mgmtp.a12.kernel.md.rt.api.IDocumentRtService;
 /**
  * Showcase: <b>language-design surprises</b> that differ from how mainstream validators work.
  *
- * <p>Domain: a <b>Vehicle inspection</b>. Demonstrates three runnable surprises:
+ * <p>Domain: a <b>Vehicle inspection</b>. Demonstrates four runnable surprises:
  * <ol>
  *   <li><b>Self-validating computations</b> — a computed field (TotalScore = Score1+Score2) also acts as a
  *       <em>validation</em> rule: if a document carries a TotalScore that disagrees with the formula, that's an
@@ -34,6 +34,9 @@ import com.mgmtp.a12.kernel.md.rt.api.IDocumentRtService;
  *       {@code [FuelType -> Emissions]} to branch on a <em>group</em> of values rather than listing each.</li>
  *   <li><b>{@code Valid()/Invalid()} on a constructed date</b> — assemble a date from day/month/year fields and
  *       detect impossible calendar dates (e.g. 31 February).</li>
+ *   <li><b>Enum vs. string compares the stored value</b> — {@code [FuelType] != [RegisteredFuel]} compares the
+ *       enum's stored value ({@code DIESEL}), never its display text ({@code Diesel}). Kernel 30 rejected this
+ *       comparison at code generation (MVK_INVALID_COMPARE_ENUM_TO_STRING); kernel 31 accepts it.</li>
  * </ol>
  * (See SHOWCASE.md for the explainer-only surprises: bilingual DSL <em>keywords</em>, the no-negation design,
  * three-valued null semantics, and decimal-scale discipline.)
@@ -54,15 +57,16 @@ public final class LanguageDemo {
 
         // clean: electric (no emissions cert needed); TotalScore agrees with Score1+Score2.
         Demos.check(rt, ser, cfg, FOLDER, "clean inspection", "clean.json", DocumentV2.empty(DM_ID)
-                .withFieldValue("Inspection[1]/FuelType", "ELECTRIC")
+                .withFieldValue("Inspection[1]/FuelType", "ELECTRIC").withFieldValue("Inspection[1]/RegisteredFuel", "ELECTRIC")
                 .withFieldValue("Inspection[1]/Day", BigDecimal.valueOf(15)).withFieldValue("Inspection[1]/Month", BigDecimal.valueOf(3)).withFieldValue("Inspection[1]/Year", BigDecimal.valueOf(2026))
                 .withFieldValue("Inspection[1]/Score1", BigDecimal.valueOf(4)).withFieldValue("Inspection[1]/Score2", BigDecimal.valueOf(5))
                 .withFieldValue("Inspection[1]/TotalScore", BigDecimal.valueOf(9)));
 
         // surprises: diesel without an emissions cert (enum-category rule);
+        //   the registry says "Diesel" (the display text), which is not the stored value DIESEL;
         //   TotalScore=99 contradicts 4+5, so the computation's own self-check fires.
         Demos.check(rt, ser, cfg, FOLDER, "surprising failures", "surprises.json", DocumentV2.empty(DM_ID)
-                .withFieldValue("Inspection[1]/FuelType", "DIESEL")
+                .withFieldValue("Inspection[1]/FuelType", "DIESEL").withFieldValue("Inspection[1]/RegisteredFuel", "Diesel")
                 .withFieldValue("Inspection[1]/Day", BigDecimal.valueOf(31)).withFieldValue("Inspection[1]/Month", BigDecimal.valueOf(2)).withFieldValue("Inspection[1]/Year", BigDecimal.valueOf(2026))
                 .withFieldValue("Inspection[1]/Score1", BigDecimal.valueOf(4)).withFieldValue("Inspection[1]/Score2", BigDecimal.valueOf(5))
                 .withFieldValue("Inspection[1]/TotalScore", BigDecimal.valueOf(99)));
@@ -81,6 +85,8 @@ public final class LanguageDemo {
                         .categories(List.of(EnumerationType.EnumCategory.builder()
                                 .name("Emissions").values(List.of("COMBUSTION", "COMBUSTION", "ZERO")).build())))).build();
         Field cert = FieldBuilder.with(dm).name("/Inspection/EmissionsCert").ft(StringTypeBuilder.builder()).build();
+        // Free text copied from the vehicle registration, e.g. by an import.
+        FieldBuilder.with(dm).name("/Inspection/RegisteredFuel").ft(StringTypeBuilder.builder()).build();
 
         FieldBuilder.with(dm).name("/Inspection/Score1").ft(NumberTypeBuilder.builder()).build();
         FieldBuilder.with(dm).name("/Inspection/Score2").ft(NumberTypeBuilder.builder()).build();
@@ -108,6 +114,13 @@ public final class LanguageDemo {
                 .errorCode("EMISSIONS_CERT_REQUIRED").severity(Severity.ERROR)
                 .errorMessage(Demos.text("Combustion vehicles require an emissions certificate.",
                                          "Verbrenner benötigen eine Abgasbescheinigung."))).build();
+
+        // Enum vs. string field: compares the enum's stored value, not its display text.
+        RuleBuilder.with(dm).name("/Inspection/FuelMismatchRule").field(fuelType).modify(rb -> rb
+                .errorCondition("FieldFilled(RegisteredFuel) And [FuelType] != [RegisteredFuel]")
+                .errorCode("FUEL_MISMATCH").severity(Severity.ERROR)
+                .errorMessage(Demos.text("The fuel type does not match the vehicle registration.",
+                                         "Die Kraftstoffart stimmt nicht mit der Zulassung überein."))).build();
 
         // Valid()/Invalid() on a date assembled from parts: catch impossible calendar dates (e.g. 31 Feb).
         RuleBuilder.with(dm).name("/Inspection/InvalidDateRule").field(day).modify(rb -> rb

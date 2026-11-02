@@ -203,9 +203,9 @@ The demo checked the last rule against kernel 31.1.1: leaving Tuesday's `Km` emp
 
 ## 5. `LanguageDemo` — Interesting language features
 
-**The scenario.** A *vehicle inspection* form, chosen to surface three behaviours that differ markedly from how mainstream validators work.
+**The scenario.** A *vehicle inspection* form, chosen to surface four behaviours that differ markedly from how mainstream validators work.
 
-**What it shows.** Three standout language features in one model:
+**What it shows.** Four standout language features in one model:
 
 ```java
 // self-validating computation: TotalScore = Score1 + Score2 is ALSO a validation rule.
@@ -218,15 +218,21 @@ ComputationBuilder…field(total).modify(cb -> cb.computationAlternatives(
 
 // Valid()/Invalid(): assemble a date from parts and detect impossible calendar dates (31 Feb).
 "Invalid(Date(Day, Month, Year))"
+
+// enum vs. string field: compares the enum's stored value (DIESEL), never its display text (Diesel).
+"FieldFilled(RegisteredFuel) And [FuelType] != [RegisteredFuel]"
 ```
 
-The self-validating computation is the standout: a computed field isn't just *filled* by the engine, it's also *checked* — if a document carries a `TotalScore` that disagrees with `Score1 + Score2`, that's an error, so derived values can't silently drift out of sync. `gradle runLanguage`'s second document carries `TotalScore = 99` against scores of 4 and 5, picks `DIESEL` without an emissions cert, and assembles `31 February` — and trips all three rules at once. Derived-fields-that-validate-themselves, attribute matrices on enum members, and calendar-validity of assembled dates are all outside the vocabulary of mainstream validators.
+The self-validating computation is the standout: a computed field isn't just *filled* by the engine, it's also *checked* — if a document carries a `TotalScore` that disagrees with `Score1 + Score2`, that's an error, so derived values can't silently drift out of sync. `gradle runLanguage`'s second document carries `TotalScore = 99` against scores of 4 and 5, picks `DIESEL` without an emissions cert, assembles `31 February`, and records the registered fuel as `Diesel` — and trips all four rules at once. Derived-fields-that-validate-themselves, attribute matrices on enum members, and calendar-validity of assembled dates are all outside the vocabulary of mainstream validators.
+
+**Enums compare by stored value.** An enumeration field stores a code (`DIESEL`) and shows a localized text (`Diesel`). When a rule compares it with a string field, the kernel compares the code. In the second document the registration says `Diesel`, the display text, so `FUEL_MISMATCH` fires even though a person would call the two equal. Kernel 30 rejected this comparison while generating code (`MVK_INVALID_COMPARE_ENUM_TO_STRING`); kernel 31 accepts it. The same applies when you compare an enumeration that has texts with one that doesn't. If your data might hold display texts, map them to codes before validation.
 
 **Docs.**
 
 - Validation-Language guide → *Computation Rules* → *Computation Rules as Validation Rules*
 - Validation-Language guide → *Models* → *Field types* (enumeration categories)
 - Validation-Language guide → *Operators and language constructs* → *Date and Time language constructs* (`Valid`/`Invalid`/`Date`)
+- Validation-Language guide → *Operators and language constructs* → *Comparison operations* → *Comparing strings and enumerations* (still describes the kernel 30 restriction)
 
 ---
 
