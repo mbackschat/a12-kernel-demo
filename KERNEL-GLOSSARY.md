@@ -1,6 +1,6 @@
 # Kernel glossary
 
-The terms you'll meet reading this demo, [`SHOWCASE.md`](./SHOWCASE.md), and the example JSON — explained for someone new to the A12 Kernel. Each entry points, where useful, to the kernel documentation by **chapter → section** in its two guides: the *Validation-Language guide* ("Kernel Language" — for business analysts) and the *Developer guide* ("Kernel" — architecture and the Java / TypeScript APIs). The public docs at geta12.com number these chapters; here they're cited by title. Where a term is illustrated by a runnable showcase, the entry marks it *Shown in `SomeDemo`* on its second line — see [`SHOWCASE.md`](./SHOWCASE.md).
+The terms you'll meet reading this demo, [`SHOWCASE.md`](./SHOWCASE.md), and the example JSON — explained for someone new to the A12 Kernel. Each entry points, where useful, to the kernel documentation by **chapter → section** in its two guides: the *Validation-Language guide* ("Kernel Language" — for business analysts) and the *Developer guide* ("Kernel" — architecture and the Java / TypeScript APIs). The public docs at geta12.com number these chapters; here they're cited by title. Since release 2026.06, the Validation-Language guide is published only with the A12 documentation on geta12.com, where it's called the *Kernel Language* documentation. It's no longer part of the public kernel source code. Where a term is illustrated by a runnable showcase, the entry marks it *Shown in `SomeDemo`* on its second line — see [`SHOWCASE.md`](./SHOWCASE.md).
 
 > The key idea to grasp first: **a rule states the *error* scenario.** Its condition is written so that `true` means the data is **invalid**. `FieldNotFilled(CustomerName)` is the rule "the customer name is missing" — when it's true, that's an error.
 
@@ -110,7 +110,7 @@ The terms you'll meet reading this demo, [`SHOWCASE.md`](./SHOWCASE.md), and the
   *Generating standalone code is shown in `CodegenDemo`.*  ·  *Docs:* Developer guide → *Getting started* and *Architecture*
 - **Groovy (runtime)** — the dynamic path generates server-side validation code as Groovy, so Groovy must be on the runtime classpath. `kernel-md-facade` adds it for you.
 
-  *Docs:* Developer guide → *Architecture*
+  *Docs:* Developer guide → *Introduction → Architecture*
 
 ## Documents and APIs (Java)
 
@@ -164,7 +164,7 @@ See [`KERNEL-SEMANTICS.md`](./KERNEL-SEMANTICS.md) for these and the rest — Bo
 - **`betterbuilders`** — the internal-tier fluent builder API (`DocumentModelBuilder`, `FieldBuilder`, `RuleBuilder`, …) used here to assemble a model in Java. (There is no *public* in-code model builder; the public alternative is authoring the model as JSON.)
 - **`kernel-md-*` / `kernel-rt-*` / `kernel-tool-*` (the module families)** — the abbreviations in the artifact names: **`md`** = *model & document* (the model/document API — the consumer front door), **`rt`** = *runtime* (executes the generated validation/computation code), **`tool`** = *compile-time tooling* (parses the DSL and generates code). The pipeline is `tool` → `md` → `rt`. Since kernel 31 most of these modules are published as **`kernel-internal-*`** artifacts, for example `kernel-internal-core-parser`. They're implementation details that you reach only through `kernel-md-facade`.
 
-  *Docs:* Developer guide → *Architecture*
+  *Docs:* Developer guide → *Introduction → Architecture*
 - **`kernel-md-facade`** — the single artifact a consumer depends on (`md` = model & document, see above). It provides the model, runtime, and serializer APIs. Kernel 31 merged three former modules into it: `kernel-md-model`, `kernel-md-a12internal`, and `kernel-md-typed-accessor-gen`. The typed-accessor generator now ships as the facade's `typed-accessor-gen-cli` jar.
 - **`mavenLocal` / the bootstrap** — the kernel's source is public (on GitHub) but its prebuilt artifacts aren't published to a public Maven repository, so the [`a12-kernel-bootstrap`](https://github.com/mbackschat/a12-kernel-bootstrap) kit builds them from those open-source repositories and publishes them to your local Maven repo (`~/.m2`). See [`README.md`](./README.md) → Setup and the [`a12-kernel-bootstrap` README](https://github.com/mbackschat/a12-kernel-bootstrap#readme).
 

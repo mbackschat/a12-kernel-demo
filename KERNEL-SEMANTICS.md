@@ -1,6 +1,6 @@
 # A12 Kernel — validation-language semantics
 
-A reference to how the A12 validation language *evaluates*, beyond what its syntax shows: its truth model, how it treats missing values, what the "required" property means, and the numeric, date, string, enumeration, repetition, path, and computation rules that determine when a rule fires. The behaviours below are documented in the kernel's *Validation-Language guide*; each entry cites the relevant chapter/section by title.
+A reference to how the A12 validation language *evaluates*, beyond what its syntax shows: its truth model, how it treats missing values, what the "required" property means, and the numeric, date, string, enumeration, repetition, path, and computation rules that determine when a rule fires. The behaviours below are documented in the kernel's *Validation-Language guide*; each entry cites the relevant chapter/section by title. Since release 2026.06 that guide is published only with the A12 documentation on geta12.com (as the *Kernel Language* documentation), not in the public kernel source code.
 
 Two facts frame everything else:
 

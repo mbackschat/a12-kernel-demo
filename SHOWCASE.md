@@ -7,6 +7,8 @@ Every demo persists its built model and documents to `output/` (git-ignored); th
 - The *Validation-Language guide* ("Kernel Language") — for business analysts.
 - The *Developer guide* ("Kernel") — architecture and the Java/TypeScript APIs.
 
+Since release 2026.06, the Validation-Language guide is published only with the A12 documentation on geta12.com, where it's called the *Kernel Language* documentation. It's no longer part of the public kernel source code.
+
 New to the kernel's vocabulary (DocumentModel, repeating group, the DSL operators, formal validation, …)? Keep [`KERNEL-GLOSSARY.md`](./KERNEL-GLOSSARY.md) open alongside this.
 
 Start with **§0**, the base Purchase-Order demo (the README walks it through end to end); the ten that follow form a progression in two clusters — **A. authoring validation logic** (§1–§5, increasing power) and **B. working with the engine & documents** (§6–§10). The `§` column links to each demo's in-depth section below (same order).
@@ -361,7 +363,7 @@ Each call returns a ZIP:
 **Docs.**
 
 - Developer guide → *Further Resources* → *Generate validation code from document model*
-- Developer guide → *Supported Languages*, and *Architecture* (Java vs TS/JS artifacts)
+- Developer guide → *Supported Languages*, and *Introduction* → *Architecture* and *Artifacts* (Java vs TS/JS artifacts)
 
 ## 10. `TypedAccessorDemo` — Typed accessor overlays
 
@@ -411,8 +413,8 @@ A few kernel behaviours read better as notes than as their own demo (the full ev
 
 These are real, documented kernel capabilities we deliberately did **not** demo here — either they need a field type the in-code builder doesn't expose, build-time code generation, or a kernel subtree this OSS build doesn't produce. Listed so you know they exist:
 
-- **Imprecise / partially-known dates** — `DateFragment` (e.g. `YYYY`, `MM-DD`), date precision (`DAY_OPTIONAL`), `ValueAsDate(F, LastDay)`, and a model-level `BaseYear`. No mainstream library can represent "born in February, day unknown." *Why not here:* the docs state these field types are import-only (not creatable via the builder this demo uses).
-- **Date-range overlap** — a `DateRange` field type plus `DateRangesOverlap(...)` to detect overlapping intervals across rows (e.g. double-booked periods) in one line. *Why not here:* needs the `DateRange` field type, which the builder may not expose.
+- **Imprecise / partially-known dates** — `DateFragment` (e.g. `YYYY`, `MM-DD`), date precision (`DAY_OPTIONAL`), `ValueAsDate(F, LastDay)`, and a model-level `BaseYear`. No mainstream library can represent "born in February, day unknown." *Why not here:* the model editor offers these types for import only, so they're rare in real models. The in-code builder does support them (`DateFragmentTypeBuilder`).
+- **Date-range overlap** — a `DateRange` field type plus `DateRangesOverlap(...)` to detect overlapping intervals across rows (e.g. double-booked periods) in one line. *Why not here:* it needs a booking-style domain of its own. The in-code builder supports the `DateRange` type (`DateRangeTypeBuilder`).
 - **Mapping with provenance** — `IMappingService.transferData(...)` transfers data between models and returns which source field produced each target value (data lineage). *Why not here:* it needs a second (target) model plus a mapping model. The API itself is available through `kernel-md-facade`.
 - **Model migration & modular models** — the kernel migrates older DM JSON forward with `IDocumentModelMigrator` (when this repo moved to kernel 31, the models in `examples/` went from format `28.4.0` to `29.4.0`). Models can also be composed from includes and type definitions; since kernel 31, turning such a model into one self-contained DM is the job of *A12 Workspace Conversion*, because `IDocumentModelService#expand` was removed. Both features need an old or multi-file model to be worth showing.
 
