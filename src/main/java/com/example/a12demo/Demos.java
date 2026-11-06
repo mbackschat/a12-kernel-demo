@@ -10,6 +10,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 import com.mgmtp.a12.kernel.core.tool.a12internal.api.error.IProblemReporter;
@@ -141,22 +142,50 @@ final class Demos {
             System.out.printf("        at field: %s%s%n",
                     pretty(m.getErrorFieldPointer()),   // which (possibly per-row) field the error attaches to
                     m.getRulePath().map(p -> "   rule: " + p).orElse(""));
+            m.getGroupsOfPossiblyCausingEntities().stream()
+                    .flatMap(Set::stream)
+                    .map(Demos::missingRow)
+                    .flatMap(Optional::stream)
+                    .distinct()
+                    .forEach(row -> System.out.println("        missing row: " + row));
         }
     }
 
     /** Render a field pointer as the familiar {@code Group[2]/Sub[1]/field} document path (groups carry their
-     *  repetition index; the trailing field does not). */
+     *  repetition index; the trailing field does not). A row the kernel couldn't find shows as {@code [?]}. */
     static String pretty(PartiallyKnownDocumentMultiPointer pointer) {
+        return path(pointer, pointer.fullName().replaceFirst("^/", "").split("/").length);
+    }
+
+    /**
+     * The row that parallel iteration expected but didn't find, e.g. {@code Shipment[1]/Capacity[?] with index
+     * value "HAM"}, or empty if the pointer names no such row.
+     *
+     * <p>The pointer marks the missing row with the repetition index {@link PartiallyKnownDocumentMultiPointer#UNKNOWN}.
+     * Only the pointers from {@link IMessage#getGroupsOfPossiblyCausingEntities()} also carry the index value the
+     * kernel looked for (kernel 31.2, A12K-2361); the referenced-field pointers leave it empty (kernel 31.3.1,
+     * measured 2026-11-06).
+     */
+    static Optional<String> missingRow(PartiallyKnownDocumentMultiPointer pointer) {
+        return pointer.semanticIndexValueForUnknownIndexGroup().map(indexValue -> {
+            int rowDepth = pointer.repetitionIndexes().indexOf(PartiallyKnownDocumentMultiPointer.UNKNOWN) + 1;
+            return path(pointer, rowDepth) + " with index value \"" + indexValue + "\"";
+        });
+    }
+
+    /** The first {@code segmentCount} segments of the pointer's path, with the repetition index on every group. */
+    private static String path(PartiallyKnownDocumentMultiPointer pointer, int segmentCount) {
         String[] segments = pointer.fullName().replaceFirst("^/", "").split("/");
         List<Integer> reps = pointer.repetitionIndexes();
         StringBuilder sb = new StringBuilder();
-        for (int i = 0; i < segments.length; i++) {
+        for (int i = 0; i < segmentCount; i++) {
             if (i > 0) {
                 sb.append('/');
             }
             sb.append(segments[i]);
             if (i < segments.length - 1 && i < reps.size()) {   // index on group segments, not the trailing field
-                sb.append('[').append(reps.get(i)).append(']');
+                int rep = reps.get(i);
+                sb.append('[').append(rep == PartiallyKnownDocumentMultiPointer.UNKNOWN ? "?" : String.valueOf(rep)).append(']');
             }
         }
         return sb.toString();

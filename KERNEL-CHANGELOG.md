@@ -119,7 +119,7 @@ When a rule iterates two repeating groups in parallel and a row has no partner, 
 - For a missing row, the pointer also carries that row's index value. In Java, read it with `semanticIndexValueForUnknownIndexGroup()`.
 - A new rule property, `filterForPossiblyCausingEntities`, narrows which entities that list reports.
 
-For example, in `CrossArrayDemo`, a `Demand` row for warehouse `HAM` without a matching `Capacity` row produces a message whose possible causes include `Capacity/Units[-5]` with the index value `HAM` (measured on 2026-11-06 with kernel 31.3.1). The message's referenced fields point at `Capacity/Units[-5]` as well, but without the index value.
+For example, in `CrossArrayDemo`, a `Demand` row for warehouse `HAM` without a matching `Capacity` row produces a message whose possible causes include `Capacity/Units[-5]` with the index value `HAM` (measured on 2026-11-06 with kernel 31.3.1). The message's referenced fields point at `Capacity/Units[-5]` as well, but without the index value. See [`SHOWCASE.md` §3](./SHOWCASE.md#3-crossarraydemo--cross-array-logic-sql-like-queries-over-arrays).
 
 **Validation language**
 

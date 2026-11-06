@@ -152,10 +152,23 @@ Why this matters: `RepetitionNotUnique` and the `Sum(… Having …)` filter are
 
 If you think in SQL: parallel iteration is an *outer join* on the index field, the `$`-filter is a *correlated subquery*, and `CurrentRepetition` lets a row compare itself to its *predecessors* — all as declarative rule text. `gradle runCrossarray`'s "problems" document trips all four, each pointing at the offending row (`Demand[2]` HAM unmatched, `Demand[3]` CGN over-capacity, `Stops[2]` out of order, `Stops[3]` on a holiday). These depend on precise path, `$`-operator and asterisk syntax — get them wrong and the model fails at code generation with an `MVK_*` error.
 
+**Which row is missing.** `HAM` has a `Demand` row but no `Capacity` row. The error attaches to `Demand[2]/Units`, but the cause is a row that doesn't exist, so no ordinary pointer can name it. The kernel marks such a row with the repetition index `-5`, meaning "unknown". Since kernel 31.2, each message also lists the groups of fields that may have caused it, and for a missing row it adds the index value it looked for:
+
+```java
+for (Set<PartiallyKnownDocumentMultiPointer> group : message.getGroupsOfPossiblyCausingEntities()) {
+    for (PartiallyKnownDocumentMultiPointer pointer : group) {
+        pointer.semanticIndexValueForUnknownIndexGroup();   // Optional[HAM] for Capacity/Units at row -5
+    }
+}
+```
+
+`gradle runCrossarray` prints this under the error as `missing row: Shipment[1]/Capacity[?] with index value "HAM"`. A form can turn that into a precise hint, such as "add a capacity row for HAM", instead of a vague "demand and capacity don't match". The message's referenced fields point at the same `Capacity` row, but without the index value. A rule can narrow the list of possible causes with its `filterForPossiblyCausingEntities` property.
+
 **Docs.**
 
 - Validation-Language guide → *Rules* → *Rules and repeatability* (parallel iteration)
 - Validation-Language guide → *Operators and language constructs* → *Functional language constructs* (the `Having` filter, the `$`-operator, `CurrentRepetition`, `MaxValue`/`NumberOfFilledFields`)
+- Kernel changelog → *31.2.0* → *Added* (`getGroupsOfPossiblyCausingEntities`, `semanticIndexValueForUnknownIndexGroup`, `filterForPossiblyCausingEntities`). The guide sections above predate these.
 
 ## 4. `ComputationDemo` — Computed / derived fields
 
