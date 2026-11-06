@@ -79,7 +79,7 @@ git clone https://github.com/mbackschat/a12-kernel-bootstrap "$ROOT/a12-kernel-b
 
 `--doctor` lists each prerequisite as OK or MISSING and suggests a fix for anything that's missing.
 
-The kit keeps its working files (sources, logs, and the downloaded Gradle) in `$ROOT/.a12-bootstrap/2026.06-ext1`.
+The kit keeps its working files (sources, logs, and the downloaded Gradle) in `$ROOT/.a12-bootstrap/2026.06-ext2`.
 
 ### What ends up in `~/.m2`
 
@@ -91,13 +91,16 @@ To learn what the kit builds, how it verifies the build, and which environment v
 
 ## Compatibility
 
-This demo is built and tested against A12 release **2026.06-ext1** (kernel 31.1.1). For the previous release, 2025.06-ext5 (kernel 30.8.1), use the `release/2025.06` branch.
+This demo is built and tested against A12 release **2026.06-ext2** (kernel 31.3.1). For earlier releases, use their branches:
+
+- 2026.06-ext1 (kernel 31.1.1): `release/2026.06-ext1`
+- 2025.06-ext5 (kernel 30.8.1): `release/2025.06`
 
 | Artifact | Version |
 |---|---|
-| A12 kernel (`com.mgmtp.a12.kernel:*`) | **31.1.1** |
-| `a12-base` (`com.mgmtp.a12.base:*`) | **30.0.2** |
-| `kernel-core-runtime-api` | 33.0.2 |
+| A12 kernel (`com.mgmtp.a12.kernel:*`) | **31.3.1** |
+| `a12-base` (`com.mgmtp.a12.base:*`) | **30.1.1** |
+| `kernel-core-runtime-api` | 33.2.1 |
 | `kernel-core-customfieldtype-api` | 29.0.2 |
 | Groovy (runtime, dynamic path) | 3.0.25 |
 | JDK / Gradle | 21 / 9.8.2 |
@@ -107,6 +110,8 @@ This demo is built and tested against A12 release **2026.06-ext1** (kernel 31.1.
 > **Upgrading your own project from 2025.06?** `~/.m2` keeps old releases, so an outdated dependency doesn't fail the build. Gradle quietly resolves the old jar instead.
 >
 > Kernel 31 merged several modules into `kernel-md-facade`: `kernel-md-model`, `kernel-md-a12internal`, and `kernel-md-typed-accessor-gen`. Check your dependency report for leftover 30.8.1 or 29.3.0 entries.
+
+> **Upgrading from 2026.06-ext1?** Kernel 31.3 renamed the model builders' `RuleBuilder.field(Field)` and `ComputationBuilder.field(Field)` to `fieldWithDefaultValuesForTest`, a test helper that seeds a default condition or computation. To attach a rule's errors to a field, use `errorFieldToRelPathReference(ElementUtils.getPath(field), field)`. To declare a computation, pass its rows directly: `field(field, List.of(Pair.of(precondition, operation)))`.
 
 ## Build & run
 
@@ -118,7 +123,7 @@ Run Gradle with a fresh Gradle home: a directory without init scripts. That way 
 ROOT="$HOME/oss/a12"                                  # the parent directory of this demo; adjust to your checkout
 export GRADLE_USER_HOME="$ROOT/.gradle-demo"          # any directory without init scripts
 export JAVA_HOME="$(/usr/libexec/java_home -v 21)"    # macOS; elsewhere, point at any JDK 21
-GRADLE="$ROOT/.a12-bootstrap/2026.06-ext1/tools/gradle-9.8.2/bin/gradle"    # the Gradle the kit downloaded
+GRADLE="$ROOT/.a12-bootstrap/2026.06-ext2/tools/gradle-9.8.2/bin/gradle"    # the Gradle the kit downloaded
 
 "$GRADLE" -p "$ROOT/a12-kernel-demo" --no-daemon buildModels   # phase 1: build the model and documents, save them as JSON
 "$GRADLE" -p "$ROOT/a12-kernel-demo" --no-daemon validate      # phase 2: load them from output/ and validate
@@ -149,7 +154,7 @@ The task does three things:
 2. It installs them with pnpm.
 3. It downloads the remaining packages from the public npm registry: the TypeScript compiler, the Node.js type definitions, and `big.js`.
 
-If you moved the kit's working directory, set `A12_BOOTSTRAP_HOME` to the full path of its release folder, for example `$ROOT/.a12-bootstrap/2026.06-ext1`.
+If you moved the kit's working directory, set `A12_BOOTSTRAP_HOME` to the full path of its release folder, for example `$ROOT/.a12-bootstrap/2026.06-ext2`.
 
 ## Expected output
 

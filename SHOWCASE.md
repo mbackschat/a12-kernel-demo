@@ -97,7 +97,8 @@ Field title = FieldBuilder.with(dm).name("/Playlist/Tracks/Title").ft(StringType
 **Per-row uniqueness.** The rule lives *inside* the repeating group and attaches its error to `Title`, so the kernel iterates the rows and reports the error on the *specific* duplicated row(s) — you don't compute the offending index yourself:
 
 ```java
-RuleBuilder.with(dm).name("/Playlist/Tracks/UniqueTitleRule").field(title).modify(rb -> rb
+RuleBuilder.with(dm).name("/Playlist/Tracks/UniqueTitleRule")
+        .errorFieldToRelPathReference(ElementUtils.getPath(title), title).modify(rb -> rb
         .errorCondition("RepetitionNotUnique(Title @From RuleGroup)")
         .errorCode("DUPLICATE_TITLE").severity(Severity.ERROR)
         .errorMessage(Demos.text("The track '$Title.value$' appears more than once.", "...")));
@@ -213,8 +214,7 @@ That last rule was measured against kernel 31.1.1 with a variant of the demo inp
 ```java
 // self-validating computation: TotalScore = Score1 + Score2 is ALSO a validation rule.
 // A document that carries TotalScore=99 (≠ 4+5) is an error — derived values are re-checked.
-ComputationBuilder…field(total).modify(cb -> cb.computationAlternatives(
-        List.of(ComputationAlternative.builder().operation("[Score1]+[Score2]").build())) …);
+ComputationBuilder…field(total, List.of(Pair.<String, String>of(null, "[Score1]+[Score2]"))) …;
 
 // enum categories + ->: enum values carry an attribute vector; branch on the GROUP, not each value.
 "[FuelType -> Emissions] == \"COMBUSTION\" And FieldNotFilled(EmissionsCert)"
@@ -363,7 +363,7 @@ byte[] jsZip   = svc.generateValidationCode(model, jsConfig /* JAVASCRIPT + WRAP
 
 Each call returns a ZIP:
 
-- **Java:** a self-contained Gradle project, with the sources under `src/main/java/` and a `build.gradle` that depends on the matching runtime, `kernel-core-runtime-31-1`. The generated code imports that runtime's version-specific packages, so you must regenerate it whenever you upgrade the kernel.
+- **Java:** a self-contained Gradle project, with the sources under `src/main/java/` and a `build.gradle` that depends on the matching runtime, `kernel-core-runtime-31-3`. The generated code imports that runtime's version-specific packages, so you must regenerate it whenever you upgrade the kernel.
 - **JavaScript:** a `.js` validator plus a `.d.ts` typings file. (The kernel calls this target `JAVASCRIPT`; there's no separate `TYPESCRIPT` target.)
 
 `gradle runCodegen` writes both ZIPs to `output/iteration/generated/` (it reuses `IterationDemo`'s model) and lists their entries. §11 runs generated JavaScript in Node.js. The significance for an evaluator: a single business-analyst-authored rule-set becomes a backend validator *and* a matching frontend validator with identical semantics — no library here is multi-language (JSON Schema is portable data, but you still need a different validator engine per language and lose parity as soon as custom keywords appear).
@@ -447,7 +447,7 @@ A few things are worth knowing when you use the TypeScript runtime yourself:
 - **Messages are localizable, not text.** `errorText` holds keys, arguments, and the model's texts; `@com.mgmtp.a12.utils/utils-localization` turns them into a string for a locale.
 - **Numbers lose their scale.** Documents are plain JSON, so a rate of `50.00` becomes `50`. The Java runtime keeps the `BigDecimal` scale. The values are numerically equal. To see the difference, open [`computed.json`](./examples/computation/computed.json) next to [`timesheet-computed-by-ts.json`](./examples/typescript/timesheet-computed-by-ts.json).
 
-**How it's wired.** The kit builds the A12 npm packages but publishes them to no registry. `gradle tsVendor` copies the tarballs from the kit's working directory (`$A12_BOOTSTRAP_HOME`, by default `../.a12-bootstrap/2026.06-ext1`) into `ts/vendor/`. `tsInstall` runs `pnpm install`, and `runTs` type-checks the script with `tsc` and runs it with Node's built-in TypeScript support. `runTs` needs Node.js 24 or newer and pnpm, so `gradle showcases` doesn't include it.
+**How it's wired.** The kit builds the A12 npm packages but publishes them to no registry. `gradle tsVendor` copies the tarballs from the kit's working directory (`$A12_BOOTSTRAP_HOME`, by default `../.a12-bootstrap/2026.06-ext2`) into `ts/vendor/`. `tsInstall` runs `pnpm install`, and `runTs` type-checks the script with `tsc` and runs it with Node's built-in TypeScript support. `runTs` needs Node.js 24 or newer and pnpm, so `gradle showcases` doesn't include it.
 
 **Docs.**
 

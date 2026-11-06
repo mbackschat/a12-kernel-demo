@@ -39,7 +39,7 @@ DocumentModel (rules as DSL text)
       │
       ▼  ③ COMPILE + CACHE   compiled into the IModelCodeCache you provide
       │                      (so the next validateFull reuses it)
-      ▼  ④ EXECUTE         kernel runtime (kernel-core-runtime-31-1, via Groovy)
+      ▼  ④ EXECUTE         kernel runtime (kernel-core-runtime-31-3, via Groovy)
    evaluate every rule condition against the Document's field values
    + run FORMAL checks (field-type constraints) on each value
       │
@@ -54,7 +54,7 @@ Two distinct kinds of message come out of ④:
 
 In the kernel's source tree, parsing and code generation live under `kernel-tool/`, the runtime under `kernel-rt/`, and the model and Document API, including `validateFull`, under `kernel-md/`.
 
-You never depend on these modules directly. Since kernel 31 most of them are published as `kernel-internal-*` artifacts, and `kernel-md-facade` pulls them in for you. The runtime executor keeps its own name, which carries the kernel version, for example `kernel-core-runtime-31-1`.
+You never depend on these modules directly. Since kernel 31 most of them are published as `kernel-internal-*` artifacts, and `kernel-md-facade` pulls them in for you. The runtime executor keeps its own name, which carries the kernel version, for example `kernel-core-runtime-31-3`.
 
 ## 4. The two demo phases, in kernel terms
 
