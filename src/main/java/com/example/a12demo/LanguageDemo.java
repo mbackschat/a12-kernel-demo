@@ -105,7 +105,8 @@ public final class LanguageDemo {
         // Self-validating computation: TotalScore = Score1 + Score2.
         ComputationBuilder.with(dm).name("/Inspection/TotalScoreComp")
                 .field(total, List.of(Pair.<String, String>of(null, "[Score1]+[Score2]")))
-                .modify(cb -> cb.errorMessage(Demos.text("TotalScore must equal Score1 + Score2.",
+                .modify(cb -> cb.errorCode("TOTAL_SCORE_MISMATCH")   // kernel 31.2+; without it the code is the name "TotalScoreComp"
+                        .errorMessage(Demos.text("TotalScore must equal Score1 + Score2.",
                                                  "Gesamtpunktzahl muss Score1 + Score2 entsprechen.")))
                 .build();
 

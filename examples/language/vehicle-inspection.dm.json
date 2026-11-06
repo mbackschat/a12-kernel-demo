@@ -197,6 +197,7 @@
                 "name": "TotalScoreComp",
                 "Computation": {
                   "computedFieldRelPath": "../TotalScore",
+                  "errorCode": "TOTAL_SCORE_MISMATCH",
                   "computationAlternatives": [
                     {
                       "operation": "[Score1]+[Score2]"

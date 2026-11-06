@@ -128,7 +128,7 @@ For example, in `CrossArrayDemo`, a `Demand` row for warehouse `HAM` without a m
 
 **Models**
 
-- A computation can set its own `errorCode`. The kernel uses it for the validation rule that checks the computed value. Without it, the rule's error code is the computation's name, as before.
+- A computation can set its own `errorCode`. The kernel uses it for the validation rule that checks the computed value. Without it, the rule's error code is the computation's name, as before. See [`SHOWCASE.md` §5](./SHOWCASE.md#5-languagedemo--interesting-language-features).
 - Every model element and type definition can carry a `changeNote` that records why it was changed.
 
 **Java API**
