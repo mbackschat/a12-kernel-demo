@@ -4,9 +4,10 @@ import java.math.BigDecimal;
 import java.util.List;
 import java.util.Locale;
 
+import org.apache.commons.lang3.tuple.Pair;
+
 import com.mgmtp.a12.kernel.md.document.apiV2.immutable.DocumentV2;
 import com.mgmtp.a12.kernel.md.document.apiV2.services.IDocumentV2Serializer;
-import com.mgmtp.a12.kernel.md.model.a12internal.Computation;
 import com.mgmtp.a12.kernel.md.model.a12internal.DocumentModel;
 import com.mgmtp.a12.kernel.md.model.a12internal.Field;
 import com.mgmtp.a12.kernel.md.model.a12internal.fieldtypes.EnumerationType;
@@ -19,6 +20,7 @@ import com.mgmtp.a12.kernel.md.model.internal.betterbuilders.RuleBuilder;
 import com.mgmtp.a12.kernel.md.model.internal.betterbuilders.ft.EnumerationTypeBuilder;
 import com.mgmtp.a12.kernel.md.model.internal.betterbuilders.ft.NumberTypeBuilder;
 import com.mgmtp.a12.kernel.md.model.internal.betterbuilders.ft.StringTypeBuilder;
+import com.mgmtp.a12.kernel.md.model.internal.service.utils.ElementUtils;
 import com.mgmtp.a12.kernel.md.rt.api.DocumentProcessingConfig;
 import com.mgmtp.a12.kernel.md.rt.api.IDocumentRtService;
 
@@ -101,29 +103,28 @@ public final class LanguageDemo {
                 .ft(NumberTypeBuilder.builder().modify(b -> b.maxFractionalDigits(0).minValue(BigDecimal.ZERO).maxValue(BigDecimal.valueOf(9999)))).build();
 
         // Self-validating computation: TotalScore = Score1 + Score2.
-        ComputationBuilder.with(dm).name("/Inspection/TotalScoreComp").field(total)
-                .modify(cb -> cb.computationAlternatives(List.of(
-                                Computation.ComputationAlternative.builder().operation("[Score1]+[Score2]").build()))
-                        .errorMessage(Demos.text("TotalScore must equal Score1 + Score2.",
+        ComputationBuilder.with(dm).name("/Inspection/TotalScoreComp")
+                .field(total, List.of(Pair.<String, String>of(null, "[Score1]+[Score2]")))
+                .modify(cb -> cb.errorMessage(Demos.text("TotalScore must equal Score1 + Score2.",
                                                  "Gesamtpunktzahl muss Score1 + Score2 entsprechen.")))
                 .build();
 
         // Enum category rule: combustion vehicles need an emissions certificate.
-        RuleBuilder.with(dm).name("/Inspection/EmissionsCertRule").field(cert).modify(rb -> rb
+        RuleBuilder.with(dm).name("/Inspection/EmissionsCertRule").errorFieldToRelPathReference(ElementUtils.getPath(cert), cert).modify(rb -> rb
                 .errorCondition("[FuelType -> Emissions] == \"COMBUSTION\" And FieldNotFilled(EmissionsCert)")
                 .errorCode("EMISSIONS_CERT_REQUIRED").severity(Severity.ERROR)
                 .errorMessage(Demos.text("Combustion vehicles require an emissions certificate.",
                                          "Verbrenner benötigen eine Abgasbescheinigung."))).build();
 
         // Enum vs. string field: compares the enum's stored value, not its display text.
-        RuleBuilder.with(dm).name("/Inspection/FuelMismatchRule").field(fuelType).modify(rb -> rb
+        RuleBuilder.with(dm).name("/Inspection/FuelMismatchRule").errorFieldToRelPathReference(ElementUtils.getPath(fuelType), fuelType).modify(rb -> rb
                 .errorCondition("FieldFilled(RegisteredFuel) And [FuelType] != [RegisteredFuel]")
                 .errorCode("FUEL_MISMATCH").severity(Severity.ERROR)
                 .errorMessage(Demos.text("The fuel type does not match the vehicle registration.",
                                          "Die Kraftstoffart stimmt nicht mit der Zulassung überein."))).build();
 
         // Valid()/Invalid() on a date assembled from parts: catch impossible calendar dates (e.g. 31 Feb).
-        RuleBuilder.with(dm).name("/Inspection/InvalidDateRule").field(day).modify(rb -> rb
+        RuleBuilder.with(dm).name("/Inspection/InvalidDateRule").errorFieldToRelPathReference(ElementUtils.getPath(day), day).modify(rb -> rb
                 .errorCondition("Invalid(Date(Day, Month, Year))")
                 .errorCode("INVALID_DATE").severity(Severity.ERROR)
                 .errorMessage(Demos.text("The inspection date is not a real calendar date.",

@@ -17,7 +17,7 @@ java {
     }
 }
 
-def kernelVersion = '31.1.1'
+def kernelVersion = '31.3.1'
 
 dependencies {
     // Single consumer entry point. Since kernel 31 the facade exports, at compile scope (POM and Gradle
@@ -25,7 +25,7 @@ dependencies {
     //   com.mgmtp.a12.kernel.md.model.internal.betterbuilders.*            -> kernel-internal-md-model
     //   com.mgmtp.a12.kernel.md.model.a12internal.{DocumentModel,Field,...} -> kernel-md-documentmodel
     //   com.mgmtp.a12.kernel.md.serializer.model.a12internal.services.*     -> kernel-md-serializer
-    // plus the runtime executor (kernel-core-runtime-31-1) and, at runtime scope, Groovy for the dynamic
+    // plus the runtime executor (kernel-core-runtime-31-3) and, at runtime scope, Groovy for the dynamic
     // validation path. Declaring any of them again would only duplicate a version pin.
     implementation "com.mgmtp.a12.kernel:kernel-md-facade:${kernelVersion}"
 
@@ -174,7 +174,7 @@ tasks.register('runTyped', JavaExec) {
 // not part of `showcases`. See SHOWCASE.md.
 // ---------------------------------------------------------------------------------------------------
 def bootstrapHome = providers.environmentVariable('A12_BOOTSTRAP_HOME')
-        .orElse(file('../.a12-bootstrap/2026.06-ext1').path)
+        .orElse(file('../.a12-bootstrap/2026.06-ext2').path)
 
 // The kit builds the A12 npm packages but publishes them to no registry; ts/package.json installs them
 // from these copies.

@@ -16,6 +16,7 @@ import com.mgmtp.a12.kernel.md.model.internal.betterbuilders.RuleBuilder;
 import com.mgmtp.a12.kernel.md.model.internal.betterbuilders.ft.DateTypeBuilder;
 import com.mgmtp.a12.kernel.md.model.internal.betterbuilders.ft.NumberTypeBuilder;
 import com.mgmtp.a12.kernel.md.model.internal.betterbuilders.ft.StringTypeBuilder;
+import com.mgmtp.a12.kernel.md.model.internal.service.utils.ElementUtils;
 import com.mgmtp.a12.kernel.md.rt.api.DocumentProcessingConfig;
 import com.mgmtp.a12.kernel.md.rt.api.IDocumentRtService;
 
@@ -91,28 +92,28 @@ public final class CrossArrayDemo {
         FieldBuilder.with(dm).name("/Shipment/Holidays/HolidayDate").ft(DateTypeBuilder.builder()).build();
 
         // 1) parallel iteration by Warehouse: demand & capacity both present, or neither.
-        RuleBuilder.with(dm).name("/Shipment/UnmatchedWarehouseRule").field(demandUnits).modify(rb -> rb
+        RuleBuilder.with(dm).name("/Shipment/UnmatchedWarehouseRule").errorFieldToRelPathReference(ElementUtils.getPath(demandUnits), demandUnits).modify(rb -> rb
                 .errorCondition("FieldsNotCollectivelyFilled(Demand/Units, Capacity/Units)")
                 .errorCode("UNMATCHED_WAREHOUSE").severity(Severity.ERROR)
                 .errorMessage(Demos.text("This warehouse has demand and capacity declared inconsistently.",
                                          "Für dieses Lager sind Bedarf und Kapazität inkonsistent erfasst."))).build();
 
         // 2) parallel iteration, value comparison across the join: demand must not exceed capacity.
-        RuleBuilder.with(dm).name("/Shipment/OverCapacityRule").field(demandUnits).modify(rb -> rb
+        RuleBuilder.with(dm).name("/Shipment/OverCapacityRule").errorFieldToRelPathReference(ElementUtils.getPath(demandUnits), demandUnits).modify(rb -> rb
                 .errorCondition("FieldFilled(Demand/Units) And FieldFilled(Capacity/Units) And [Demand/Units] > [Capacity/Units]")
                 .errorCode("OVER_CAPACITY").severity(Severity.ERROR)
                 .errorMessage(Demos.text("Demanded units exceed the warehouse capacity.",
                                          "Bedarf übersteigt die Lagerkapazität."))).build();
 
         // 3) row-order via CurrentRepetition: the max ETA among preceding stops must be < this stop's ETA.
-        RuleBuilder.with(dm).name("/Shipment/Stops/OutOfOrderRule").field(eta).modify(rb -> rb
+        RuleBuilder.with(dm).name("/Shipment/Stops/OutOfOrderRule").errorFieldToRelPathReference(ElementUtils.getPath(eta), eta).modify(rb -> rb
                 .errorCondition("MaxValue(/Shipment/Stops*/Eta Having CurrentRepetition(/Shipment/Stops) < CurrentRepetition($/Shipment/Stops)) >= [/Shipment/Stops/Eta]")
                 .errorCode("OUT_OF_ORDER").severity(Severity.ERROR)
                 .errorMessage(Demos.text("Stop ETAs must be in chronological order.",
                                          "Stopp-Ankunftszeiten müssen chronologisch geordnet sein."))).build();
 
         // 4) correlated filter via $: a stop's ETA must not fall on a holiday.
-        RuleBuilder.with(dm).name("/Shipment/Stops/HolidayClashRule").field(eta).modify(rb -> rb
+        RuleBuilder.with(dm).name("/Shipment/Stops/HolidayClashRule").errorFieldToRelPathReference(ElementUtils.getPath(eta), eta).modify(rb -> rb
                 .errorCondition("FieldFilled(/Shipment/Stops/Eta) And NumberOfFilledFields(/Shipment/Holidays*/HolidayDate Having [/Shipment/Holidays/HolidayDate] == [$/Shipment/Stops/Eta]) > 0")
                 .errorCode("DELIVERY_ON_HOLIDAY").severity(Severity.ERROR)
                 .errorMessage(Demos.text("Delivery is scheduled on a holiday.",

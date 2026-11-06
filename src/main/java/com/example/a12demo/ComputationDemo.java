@@ -4,9 +4,10 @@ import java.math.BigDecimal;
 import java.util.List;
 import java.util.Locale;
 
+import org.apache.commons.lang3.tuple.Pair;
+
 import com.mgmtp.a12.kernel.md.document.apiV2.immutable.DocumentV2;
 import com.mgmtp.a12.kernel.md.document.apiV2.services.IDocumentV2Serializer;
-import com.mgmtp.a12.kernel.md.model.a12internal.Computation;
 import com.mgmtp.a12.kernel.md.model.a12internal.DocumentModel;
 import com.mgmtp.a12.kernel.md.model.a12internal.Field;
 import com.mgmtp.a12.kernel.md.model.api.IDocumentModel;
@@ -97,7 +98,7 @@ public final class ComputationDemo {
         Field dayPay = FieldBuilder.with(dm).name("/Sheet/Days/DayPay")
                 .ft(NumberTypeBuilder.builder().modify(b -> b.maxFractionalDigits(2))).build();
 
-        // 1) per-row: DayPay = Hours * Rate. (.field(f) seeds a placeholder alternative we replace via modify.)
+        // 1) per-row: DayPay = Hours * Rate.
         computation(dm, "/Sheet/Days/DayPayComp", dayPay, alt(null, "[Hours]*[Rate]"));
 
         // 2) cross-level aggregate: WeekPay = Σ of the (computed) day pays.
@@ -116,19 +117,14 @@ public final class ComputationDemo {
         return dm;
     }
 
-    private static Computation.ComputationAlternative alt(String precondition, String operation) {
-        Computation.ComputationAlternative.ComputationAlternativeBuilder b =
-                Computation.ComputationAlternative.builder().operation(operation);
-        if (precondition != null) {
-            b.precondition(precondition);
-        }
-        return b.build();
+    /** One row of the computation table; a null precondition means "always". */
+    private static Pair<String, String> alt(String precondition, String operation) {
+        return Pair.of(precondition, operation);
     }
 
+    @SafeVarargs
     private static void computation(DocumentModel dm, String name, Field computedField,
-            Computation.ComputationAlternative... alternatives) {
-        ComputationBuilder.with(dm).name(name).field(computedField)
-                .modify(cb -> cb.computationAlternatives(List.of(alternatives)))
-                .build();
+            Pair<String, String>... alternatives) {
+        ComputationBuilder.with(dm).name(name).field(computedField, List.of(alternatives)).build();
     }
 }

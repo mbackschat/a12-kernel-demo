@@ -11,13 +11,13 @@
     "parity": "tsc --noEmit && node src/parity.ts"
   },
   "dependencies": {
-    "@com.mgmtp.a12.base/base-model-api": "file:vendor/com.mgmtp.a12.base-base-model-api-30.0.2.tgz",
-    "@com.mgmtp.a12.kernel/kernel-core-runtime-api-ts": "file:vendor/com.mgmtp.a12.kernel-kernel-core-runtime-api-ts-31.1.1.tgz",
-    "@com.mgmtp.a12.kernel/kernel-core-runtime-ts": "file:vendor/com.mgmtp.a12.kernel-kernel-core-runtime-ts-31.1.1.tgz",
-    "@com.mgmtp.a12.kernel/kernel-md-facade": "file:vendor/com.mgmtp.a12.kernel-kernel-md-facade-31.1.1.tgz",
+    "@com.mgmtp.a12.base/base-model-api": "file:vendor/com.mgmtp.a12.base-base-model-api-30.1.1.tgz",
+    "@com.mgmtp.a12.kernel/kernel-core-runtime-api-ts": "file:vendor/com.mgmtp.a12.kernel-kernel-core-runtime-api-ts-31.3.1.tgz",
+    "@com.mgmtp.a12.kernel/kernel-core-runtime-ts": "file:vendor/com.mgmtp.a12.kernel-kernel-core-runtime-ts-31.3.1.tgz",
+    "@com.mgmtp.a12.kernel/kernel-md-facade": "file:vendor/com.mgmtp.a12.kernel-kernel-md-facade-31.3.1.tgz",
     "@com.mgmtp.a12.utils/utils-collections": "file:vendor/com.mgmtp.a12.utils-utils-collections-7.0.1.tgz",
-    "@com.mgmtp.a12.utils/utils-localization": "file:vendor/com.mgmtp.a12.utils-utils-localization-8.0.2.tgz",
-    "@com.mgmtp.a12.utils/utils-logging": "file:vendor/com.mgmtp.a12.utils-utils-logging-7.0.2.tgz"
+    "@com.mgmtp.a12.utils/utils-localization": "file:vendor/com.mgmtp.a12.utils-utils-localization-8.1.0.tgz",
+    "@com.mgmtp.a12.utils/utils-logging": "file:vendor/com.mgmtp.a12.utils-utils-logging-7.1.0.tgz"
   },
   "devDependencies": {
     "@types/node": "24.19.2",

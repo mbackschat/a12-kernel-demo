@@ -16,6 +16,7 @@ import com.mgmtp.a12.kernel.md.model.internal.betterbuilders.FieldBuilder;
 import com.mgmtp.a12.kernel.md.model.internal.betterbuilders.RuleBuilder;
 import com.mgmtp.a12.kernel.md.model.internal.betterbuilders.ft.NumberTypeBuilder;
 import com.mgmtp.a12.kernel.md.model.internal.betterbuilders.ft.StringTypeBuilder;
+import com.mgmtp.a12.kernel.md.model.internal.service.utils.ElementUtils;
 import com.mgmtp.a12.kernel.md.rt.api.DocumentProcessingConfig;
 import com.mgmtp.a12.kernel.md.rt.api.IDocumentRtService;
 
@@ -105,7 +106,7 @@ public final class PartialValidationDemo {
 
     private static void rule(DocumentModel dm, String name, Field errorField, String condition, String code,
             Severity severity, String en, String de) {
-        RuleBuilder.with(dm).name(name).field(errorField).modify(rb -> rb
+        RuleBuilder.with(dm).name(name).errorFieldToRelPathReference(ElementUtils.getPath(errorField), errorField).modify(rb -> rb
                 .errorCondition(condition).errorCode(code).severity(severity)
                 .errorMessage(Demos.text(en, de))).build();
     }

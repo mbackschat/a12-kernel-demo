@@ -25,6 +25,7 @@ import com.mgmtp.a12.kernel.md.model.internal.betterbuilders.RuleBuilder;
 import com.mgmtp.a12.kernel.md.model.internal.betterbuilders.ft.CustomFieldTypeBuilder;
 import com.mgmtp.a12.kernel.md.model.internal.betterbuilders.ft.NumberTypeBuilder;
 import com.mgmtp.a12.kernel.md.model.internal.betterbuilders.ft.StringTypeBuilder;
+import com.mgmtp.a12.kernel.md.model.internal.service.utils.ElementUtils;
 import com.mgmtp.a12.kernel.md.rt.api.DocumentProcessingConfig;
 import com.mgmtp.a12.kernel.md.rt.api.ICustomCondition;
 import com.mgmtp.a12.kernel.md.rt.api.ICustomConditionFactory;
@@ -87,7 +88,7 @@ public final class ExtensionDemo {
         FieldBuilder.with(dm).name("/Product/StockUnits").ft(NumberTypeBuilder.builder()).build();
 
         // Rule delegating to the Java custom condition. (FieldFilled also satisfies "error field referenced".)
-        RuleBuilder.with(dm).name("/Product/BarcodeRule").field(barcode).modify(rb -> rb
+        RuleBuilder.with(dm).name("/Product/BarcodeRule").errorFieldToRelPathReference(ElementUtils.getPath(barcode), barcode).modify(rb -> rb
                 .errorCondition("FieldFilled(Barcode) And CustomCondition Ean13Invalid")
                 .errorCode("BARCODE_CHECKSUM").severity(Severity.ERROR)
                 .errorMessage(Demos.text("Barcode failed its EAN-13 checksum.",

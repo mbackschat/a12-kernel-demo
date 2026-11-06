@@ -18,6 +18,7 @@ import com.mgmtp.a12.kernel.md.model.internal.betterbuilders.RuleBuilder;
 import com.mgmtp.a12.kernel.md.model.internal.betterbuilders.ft.BooleanTypeBuilder;
 import com.mgmtp.a12.kernel.md.model.internal.betterbuilders.ft.NumberTypeBuilder;
 import com.mgmtp.a12.kernel.md.model.internal.betterbuilders.ft.StringTypeBuilder;
+import com.mgmtp.a12.kernel.md.model.internal.service.utils.ElementUtils;
 import com.mgmtp.a12.kernel.md.rt.api.DocumentProcessingConfig;
 import com.mgmtp.a12.kernel.md.rt.api.IDocumentRtService;
 
@@ -80,21 +81,21 @@ public final class IterationDemo {
         FieldBuilder.with(dm).name("/Playlist/Tracks/Explicit").ft(BooleanTypeBuilder.builder()).build();
 
         // 1) per-row uniqueness: no duplicate track titles; the error attaches to the duplicated row(s).
-        RuleBuilder.with(dm).name("/Playlist/Tracks/UniqueTitleRule").field(title).modify(rb -> rb
+        RuleBuilder.with(dm).name("/Playlist/Tracks/UniqueTitleRule").errorFieldToRelPathReference(ElementUtils.getPath(title), title).modify(rb -> rb
                 .errorCondition("RepetitionNotUnique(Title @From RuleGroup)")
                 .errorCode("DUPLICATE_TITLE").severity(Severity.ERROR)
                 .errorMessage(Demos.text("The track '$Title.value$' appears more than once.",
                                          "Der Titel '$Title.value$' kommt mehrfach vor."))).build();
 
         // 2) aggregate: total running time must be under one hour (3600 s).
-        RuleBuilder.with(dm).name("/Playlist/TooLongRule").field(name).modify(rb -> rb
+        RuleBuilder.with(dm).name("/Playlist/TooLongRule").errorFieldToRelPathReference(ElementUtils.getPath(name), name).modify(rb -> rb
                 .errorCondition("FieldFilled(Name) And Sum(Tracks*/Seconds) > 3600")
                 .errorCode("PLAYLIST_TOO_LONG").severity(Severity.ERROR)
                 .errorMessage(Demos.text("The playlist exceeds one hour of total running time.",
                                          "Die Wiedergabeliste überschreitet eine Stunde Gesamtspielzeit."))).build();
 
         // 3) filtered aggregate: explicit tracks must not dominate (their running time stays <= 600 s).
-        RuleBuilder.with(dm).name("/Playlist/ExplicitHeavyRule").field(name).modify(rb -> rb
+        RuleBuilder.with(dm).name("/Playlist/ExplicitHeavyRule").errorFieldToRelPathReference(ElementUtils.getPath(name), name).modify(rb -> rb
                 .errorCondition("FieldFilled(Name) And Sum(Tracks*/Seconds Having [Tracks/Explicit]==True) > 600")
                 .errorCode("EXPLICIT_HEAVY").severity(Severity.WARNING)
                 .errorMessage(Demos.text("Over 10 minutes of explicit tracks — consider a clean version.",

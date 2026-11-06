@@ -13,6 +13,7 @@ import com.mgmtp.a12.kernel.md.model.internal.betterbuilders.ft.BooleanTypeBuild
 import com.mgmtp.a12.kernel.md.model.internal.betterbuilders.ft.DateTypeBuilder;
 import com.mgmtp.a12.kernel.md.model.internal.betterbuilders.ft.NumberTypeBuilder;
 import com.mgmtp.a12.kernel.md.model.internal.betterbuilders.ft.StringTypeBuilder;
+import com.mgmtp.a12.kernel.md.model.internal.service.utils.ElementUtils;
 
 /**
  * Builds a small "Purchase Order" {@link DocumentModel} entirely in code, using the kernel's model
@@ -76,7 +77,7 @@ public final class PurchaseOrderModel {
     /** Adds a rule (named {@code ruleName}) whose error attaches to {@code errorField}. */
     private static void rule(DocumentModel dm, String ruleName, Field errorField, String condition, String code,
             Severity severity, String enText) {
-        RuleBuilder.with(dm).name(ruleName).field(errorField).modify(rb -> rb
+        RuleBuilder.with(dm).name(ruleName).errorFieldToRelPathReference(ElementUtils.getPath(errorField), errorField).modify(rb -> rb
                 .errorCondition(condition)
                 .errorCode(code)
                 .severity(severity)
