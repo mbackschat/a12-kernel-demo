@@ -112,6 +112,8 @@ This demo is built and tested against A12 release **2026.06-ext2** (kernel 31.3.
 > Kernel 31 merged several modules into `kernel-md-facade`: `kernel-md-model`, `kernel-md-a12internal`, and `kernel-md-typed-accessor-gen`. Check your dependency report for leftover 30.8.1 or 29.3.0 entries.
 
 > **Upgrading from 2026.06-ext1?** Kernel 31.3 renamed the model builders' `RuleBuilder.field(Field)` and `ComputationBuilder.field(Field)` to `fieldWithDefaultValuesForTest`, a test helper that seeds a default condition or computation. To attach a rule's errors to a field, use `errorFieldToRelPathReference(ElementUtils.getPath(field), field)`. To declare a computation, pass its rows directly: `field(field, List.of(Pair.of(precondition, operation)))`.
+>
+> For everything else that changed in the kernel between these releases, see [`KERNEL-CHANGELOG.md`](./KERNEL-CHANGELOG.md).
 
 ## Build & run
 
@@ -189,6 +191,7 @@ Two copies exist, on purpose:
 - **[`SHOWCASE.md`](./SHOWCASE.md)** — the eleven feature-showcase demos in depth (code excerpts per feature), plus the "interesting language features" and "powerful but not wired up here" sections.
 - **[`COMPARISON.md`](./COMPARISON.md)** — how the kernel stacks up against five mainstream validators (Zod, Pydantic, JSON Schema, Bean Validation, FluentValidation), each introduced from scratch, with a feature-by-feature table.
 - **[`KERNEL-SEMANTICS.md`](./KERNEL-SEMANTICS.md)** — how the validation language evaluates: truth values, missing data, the "required" property, and the numeric/date/string/repetition/computation rules that determine when a rule fires.
+- **[`KERNEL-CHANGELOG.md`](./KERNEL-CHANGELOG.md)** — what changed in the kernel between the releases this demo supports, grouped by topic: what to do before you upgrade, what's new, and which behavior changed.
 - **[`KERNEL-GLOSSARY.md`](./KERNEL-GLOSSARY.md)** — new to the kernel's vocabulary? Every term used here (DocumentModel, repeating group, the DSL operators, formal validation, typed accessors, …) explained, with pointers into the kernel docs.
 - A12 docs & forum: https://geta12.com/#/docs
 
