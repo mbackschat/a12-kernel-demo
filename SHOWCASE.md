@@ -197,7 +197,7 @@ A few rules apply:
 - The term must be numeric. It can't contain `Having`, `CustomCondition`, `RepetitionNotUnique`, or another `SumOfTerms`.
 - An empty number field counts as `0`, as it does in `Sum`, so a row without numbers adds nothing.
 
-That last rule was measured against kernel 31.1.1 with a variant of the demo input: with Tuesday's `Km` empty, `WeekCost` becomes `1052`, and adding a Wednesday row that holds only its day name leaves it at `1052`.
+That last rule was measured against kernel 31.3.1 on 2026-11-06, with a variant of the demo input: with Tuesday's `Km` empty, `WeekCost` becomes `1052`, and adding a Wednesday row that holds only its day name leaves it at `1052`. Kernel 31.1.1 gave the same results.
 
 **Docs.**
 
@@ -480,6 +480,6 @@ These are real, documented kernel capabilities we deliberately did **not** demo 
 - **Imprecise / partially-known dates** — `DateFragment` (e.g. `YYYY`, `MM-DD`), date precision (`DAY_OPTIONAL`), `ValueAsDate(F, LastDay)`, and a model-level `BaseYear`. No mainstream library can represent "born in February, day unknown." *Why not here:* the model editor offers these types for import only, so they're rare in real models. The in-code builder does support them (`DateFragmentTypeBuilder`).
 - **Date-range overlap** — a `DateRange` field type plus `DateRangesOverlap(...)` to detect overlapping intervals across rows (e.g. double-booked periods) in one line. *Why not here:* it needs a booking-style domain of its own. The in-code builder supports the `DateRange` type (`DateRangeTypeBuilder`).
 - **Mapping with provenance** — `IMappingService.transferData(...)` transfers data between models and returns which source field produced each target value (data lineage). *Why not here:* it needs a second (target) model plus a mapping model. The API itself is available through `kernel-md-facade`.
-- **Model migration & modular models** — the kernel migrates older DM JSON forward with `IDocumentModelMigrator` (when this repo moved to kernel 31, the models in `examples/` went from format `28.4.0` to `29.4.0`). Models can also be composed from includes and type definitions; since kernel 31, turning such a model into one self-contained DM is the job of *A12 Workspace Conversion*, because `IDocumentModelService#expand` was removed. Both features need an old or multi-file model to be worth showing.
+- **Model migration & modular models** — the kernel migrates older DM JSON forward with `IDocumentModelMigrator` (the models in `examples/` went from format `28.4.0` to `29.4.0` with kernel 31.1, and to `29.8.0` with kernel 31.3). Models can also be composed from includes and type definitions; since kernel 31, turning such a model into one self-contained DM is the job of *A12 Workspace Conversion*, because `IDocumentModelService#expand` was removed. Both features need an old or multi-file model to be worth showing.
 
 For the full surface, see the A12 docs & forum: https://geta12.com/#/docs
