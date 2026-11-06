@@ -6,7 +6,7 @@ The official *Kernel Changelog* on [geta12.com](https://geta12.com/#/releases/re
 
 | A12 release | Kernel | Model format the kernel writes | Branch of this demo |
 |---|---|---|---|
-| 2025.06-ext5 | 30.8.1 | 28.4.0 | `release/2025.06` |
+| 2025.06-ext5 | 30.8.1 | 28.4.0 | `release/2025.06-ext5` |
 | 2026.06-ext1 | 31.1.1 | 29.4.0 | `release/2026.06-ext1` |
 | 2026.06-ext2 | 31.3.1 | 29.8.0 | `main` |
 

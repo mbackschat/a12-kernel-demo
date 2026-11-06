@@ -94,7 +94,7 @@ To learn what the kit builds, how it verifies the build, and which environment v
 This demo is built and tested against A12 release **2026.06-ext2** (kernel 31.3.1). For earlier releases, use their branches:
 
 - 2026.06-ext1 (kernel 31.1.1): `release/2026.06-ext1`
-- 2025.06-ext5 (kernel 30.8.1): `release/2025.06`
+- 2025.06-ext5 (kernel 30.8.1): `release/2025.06-ext5`
 
 | Artifact | Version |
 |---|---|
