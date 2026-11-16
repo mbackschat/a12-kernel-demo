@@ -1,0 +1,31 @@
+{
+  "Shipment": {
+    "Capacity": [
+      {
+        "Units": 150,
+        "Warehouse": "BER"
+      }
+    ],
+    "Demand": [
+      {
+        "Units": 100,
+        "Warehouse": "BER"
+      }
+    ],
+    "Holidays": [
+      {
+        "HolidayDate": "2026-12-25"
+      }
+    ],
+    "Stops": [
+      {
+        "Eta": "2026-03-10",
+        "Location": "BER"
+      },
+      {
+        "Eta": "2026-03-12",
+        "Location": "LEJ"
+      }
+    ]
+  }
+}

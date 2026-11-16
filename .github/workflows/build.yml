@@ -1,0 +1,17 @@
+name: Public bootstrap and demo
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    uses: mbackschat/a12-kernel-bootstrap/.github/workflows/build.yml@7efcd9f56350648013d036ad30f45866114c326b
+    with:
+      bootstrap-ref: 7efcd9f56350648013d036ad30f45866114c326b
+      demo-ref: ${{ github.sha }}

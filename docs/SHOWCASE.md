@@ -1,0 +1,502 @@
+# Feature showcase
+
+Beyond the basic Purchase-Order demo, this repo ships eleven **standalone, runnable** demos — one per kernel feature area. Ten are Java programs: each is a single `*Demo` `main` with its own self-contained model (built in code), sample documents, and a rich result print-out, on its **own original domain** (playlist, timesheet, event registration, product catalog, shipment routing, recipe, loan application, vehicle inspection, subscription). The eleventh runs three of those models in Node.js with the kernel's TypeScript runtime. The kernel docs were only a guide to *which* features exist.
+
+Every demo persists its built model and documents to `output/` (git-ignored); those are copied into the committed [`examples/`](../examples) so you can read the real JSON without running anything (see [`examples/README.md`](../examples/README.md)). Doc references below point into the two kernel guides by chapter → section title:
+
+- The *Validation-Language guide* ("Kernel Language") — for business analysts.
+- The *Developer guide* ("Kernel") — architecture and the Java/TypeScript APIs.
+
+The Validation-Language guide is no longer in the public kernel source; see the note in [`KERNEL-GLOSSARY.md`](KERNEL-GLOSSARY.md).
+
+New to the kernel's vocabulary (DocumentModel, repeating group, the DSL operators, formal validation, …)? Keep [`KERNEL-GLOSSARY.md`](KERNEL-GLOSSARY.md) open alongside this.
+
+Start with **§0**, the base Purchase-Order demo (the README walks it through end to end); the eleven that follow form a progression in two clusters — **A. authoring validation logic** (§1–§5, increasing power) and **B. working with the engine & documents** (§6–§11). The `§` column links to each demo's in-depth section below (same order).
+
+| § | Demo | What it demonstrates | Domain | Run (`gradle …`) |
+|---|---|---|---|---|
+| 0 | `PurchaseOrderModel` *(base)* | The basics — author → persist → load → validate (two-phase) | Purchase order | `demo` |
+| 1 | `DslTourDemo` | A tour of the DSL | Event registration | `runDsltour` |
+| 2 | `IterationDemo` | Structural rules over a repeating group | Playlist + tracks | `runIteration` |
+| 3 | `CrossArrayDemo` | Cross-array logic (SQL-like queries over arrays) | Shipment routing | `runCrossarray` |
+| 4 | `ComputationDemo` | Computed / derived fields | Weekly timesheet | `runComputation` |
+| 5 | `LanguageDemo` | Interesting language features | Vehicle inspection | `runLanguage` |
+| 6 | `ExtensionDemo` | Extending the kernel | Product catalog | `runExtension` |
+| 7 | `DocumentApiDemo` | The document is a real data structure | Recipe + ingredients | `runDocapi` |
+| 8 | `PartialValidationDemo` | Incremental "wizard" validation | Loan-application wizard | `runPartial` |
+| 9 | `CodegenDemo` | Compile a model to code | (reuses playlist) | `runCodegen` |
+| 10 | `TypedAccessorDemo` | Typed accessor overlays | Subscription + add-ons | `runTyped` |
+| 11 | `ts/src/parity.ts` + `JsExport` | The same rules in Node.js, compared with Java | (reuses purchase order, playlist, timesheet) | `runTs` |
+
+`gradle showcases` runs the nine pure-runtime demos (§1–§9). Two run separately: `gradle runTyped` (§10) adds an isolated build-time code-generation step, and `gradle runTs` (§11) needs Node.js and pnpm. Shared plumbing (model bridge, runtime wiring, bilingual messages, and the rich `IMessage` printer) lives in [`Demos.java`](../src/main/java/com/example/a12demo/Demos.java).
+
+---
+
+## 0. Start here — `PurchaseOrderModel` (the basics)
+
+The base demo is the hello-world: a small Purchase-Order model (a few String/Number/Date/Boolean fields + four plain rules). It's the one the [README](../README.md) walks through end to end (setup → `gradle buildModels` → `gradle validate` → expected output), so this section just places it in context.
+
+It's also the **only two-phase demo**, and that's deliberate: `BuilderMain` (author + persist) and `ValidatorMain` (load + validate) are split to teach the **author-once / validate-often** workflow — models are built and serialized up front, then loaded and validated separately, fully **decoupled** from how they were authored (the validator only consumes JSON via the public API). The ten Java showcases below are instead **single self-contained `main`s** that build *and* validate inline (via `Demos.check`), to keep each one focused on the single feature it illustrates. The TypeScript showcase (§11) reads the models they persist.
+
+Run it with `gradle demo` (runs `buildModels` then `validate`).
+
+---
+
+# A. Authoring validation logic
+
+## 1. `DslTourDemo` — A tour of the DSL
+
+**The scenario.** A conference *Event registration* form — the sort of thing you'd normally pepper with hand-written `if` statements scattered across controllers. Here every business rule is **one line of the A12 DSL, authored as model data**, so it reads like a requirement rather than code.
+
+**What it shows.** A breadth sampler of the language's single-field constructs, one rule each, so you can see the vocabulary at a glance. The demo validates two documents: a *complete* registration that passes cleanly, and an *incomplete* one deliberately crafted to trip nine rules at once. Keep the kernel's golden rule in mind — **a rule states the *error* scenario**, so its condition is written to be `true` exactly when the data is *invalid*:
+
+```java
+// string slicing — ticket must be issued in the EU region
+"FieldFilled(TicketCode) And RangeAsString(TicketCode, 1, 2) != \"EU\""
+// regex (cross-language-safe subset)
+"FieldFilled(PromoCode) And [PromoCode] PatternViolated \"[A-Z]{2}[0-9]{4}\""
+// string length
+"FieldFilled(AccessPin) And Length(AccessPin) != 5"
+// first-class tolerance comparison
+"[QuotedFee] DiffersWithToleranceRange5 [PaidFee]"
+// value-list membership (sold-out seat blocks)
+"FieldValueIncludedInValueList(SeatBlock, \"VIP\", \"BACKSTAGE\", \"PRESS\")"
+// date arithmetic — passport must stay valid 6+ months
+"FieldFilled(PassportExpiry) And DifferenceInMonths(Today, PassportExpiry) < 6"
+// enum comparison + conditional requiredness
+"[Decision] == \"DECLINED\" And FieldNotFilled(DeclineReason)"
+// "at least one of N"
+"NoFieldFilled(Phone, Email)"
+```
+
+Each reads like business language but is authored as model data; several (string slicing, tolerance, "at least one of N") have no built-in equivalent in mainstream validators. `Decision` is an `EnumerationType` with bilingual value labels, compared by its stored value. Note the recurring `FieldFilled(x) And …` guard: it stops a rule from firing on an *empty* field (that's a separate concern — see the null semantics in "More interesting language features" below).
+
+Run it with `gradle runDsltour`: the incomplete document prints nine `[ERROR]`/`[WARNING]` lines — each naming its error code, message, and the exact field it attaches to — while the complete one prints `VALID`. The takeaway isn't any one operator; it's that *all* of this expressiveness is declarative data a business analyst can read and change, not branching code a developer has to maintain.
+
+**Docs.**
+
+- Validation-Language guide → *Operators and language constructs*:
+    - *String operations* — `RangeAsString`, `PatternViolated`
+    - *Comparison operations* — `DiffersWithToleranceRange`
+    - *Predicate language constructs* — `FieldValueIncludedInValueList`, `NoFieldFilled`, `FieldNotFilled`
+    - *Date and Time language constructs* — `Today`, `DifferenceInMonths`
+- Validation-Language guide → *Models* → *Field types* (enumerations)
+- Validation-Language guide → *Parser messages* → *Pattern* / *Date* (catalogued parser/limit details)
+
+## 2. `IterationDemo` — Structural rules over a repeating group
+
+**The scenario.** Real forms have *lists* — order lines, contacts, tracks. Validating across the rows ("no duplicates", "the total mustn't exceed X") is where most validators make you drop into a loop. This demo is a music *Playlist* with a repeating list of *Tracks*, and three rules that work over the rows **entirely declaratively** — the kernel does the looping, including pointing each error at the right row.
+
+**What it shows.** First, how a repeating group is declared — one builder call sets the max repetitions, then fields are added by path:
+
+```java
+GroupBuilder.with(dm).name("/Playlist/Tracks").repeat(200).build();   // max 200 rows
+Field title = FieldBuilder.with(dm).name("/Playlist/Tracks/Title").ft(StringTypeBuilder.builder()).build();
+```
+
+**Per-row uniqueness.** The rule lives *inside* the repeating group and attaches its error to `Title`, so the kernel iterates the rows and reports the error on the *specific* duplicated row(s) — you don't compute the offending index yourself:
+
+```java
+RuleBuilder.with(dm).name("/Playlist/Tracks/UniqueTitleRule")
+        .errorFieldToRelPathReference(ElementUtils.getPath(title), title).modify(rb -> rb
+        .errorCondition("RepetitionNotUnique(Title @From RuleGroup)")
+        .errorCode("DUPLICATE_TITLE").severity(Severity.ERROR)
+        .errorMessage(Demos.text("The track '$Title.value$' appears more than once.", "...")));
+```
+
+Two tracks named "Echo" produce two messages, each pointing at its own row (the prettified pointer reads `Playlist[1]/Tracks[1]/Title` vs `Playlist[1]/Tracks[2]/Title`), and the message interpolates the offending value via `$Title.value$`.
+
+**Aggregate and filtered aggregate.** `Sum` over all rows (the `*` flattens the repetition), and `Sum(... Having ...)` aggregates only the subset matching a predicate evaluated per row:
+
+```java
+.errorCondition("FieldFilled(Name) And Sum(Tracks*/Seconds) > 3600")                              // total runtime > 1h
+.errorCondition("FieldFilled(Name) And Sum(Tracks*/Seconds Having [Tracks/Explicit]==True) > 600") // explicit runtime > 10m
+```
+
+(The `FieldFilled(Name)` conjunct is there because a rule's error field — here the playlist `Name` the aggregate attaches to — must be referenced in its own condition.)
+
+Why this matters: `RepetitionNotUnique` and the `Sum(… Having …)` filter are *primitives*, not patterns you assemble by hand. In a code-first validator like Zod you'd write a `superRefine` that loops the array, tracks seen values in a `Set`, and manually pushes an issue at `ctx.addIssue({ path: [i, 'title'] })`; JSON Schema can't express a per-field cross-row key or a filtered aggregate at all. Run `gradle runIteration` to see the duplicate-title document produce two errors, one per offending row — the natural next rung is the cross-array logic in §3.
+
+**Docs.**
+
+- Validation-Language guide → *Models* → *Repeatable Groups and Fields*
+- Validation-Language guide → *Rules* → *Rules and repeatability*, and *Error texts for Rules* (the `$Field.value$` token)
+- Validation-Language guide → *Operators and language constructs* → *Functional language constructs* (`Sum`, `RepetitionNotUnique`, the `Having` filter and the `*` asterisk operator)
+
+## 3. `CrossArrayDemo` — Cross-array logic (SQL-like queries over arrays)
+
+**The scenario.** Now the rules span *two* lists, or relate a row to *other* rows — the territory where you'd normally reach for nested loops or even an in-memory join. A *shipment routing* document holds warehouse `Demand` and `Capacity` (two lists), a list of route `Stops`, and a `Holidays` calendar. Everything lives under one top-level `Shipment` group, because a rule must belong to a group and these rules reach across its sub-lists.
+
+**What it shows.** Four rules, each a declarative one-liner that a code-first validator would express as a hand-written loop — and that JSON Schema can't express at all. It's the advanced end of the iteration ladder from §2, and the clearest "a validator that does SQL-like queries" example in the repo.
+
+**Parallel iteration — join two arrays by a key.** `Demand` and `Capacity` are two repeating groups that each declare a `Warehouse` *index field*; the kernel iterates them **joined by that key** (an outer join, inferred purely from the shared index — you set it with `GroupBuilder…​.indexField("Warehouse")`):
+
+```java
+// both-or-neither, per warehouse:
+"FieldsNotCollectivelyFilled(Demand/Units, Capacity/Units)"
+// demand must not exceed capacity, comparing the joined rows:
+"FieldFilled(Demand/Units) And FieldFilled(Capacity/Units) And [Demand/Units] > [Capacity/Units]"
+```
+
+**Correlated filter — a subquery via the `$`-operator.** For each routing `Stop`, `$` pins the current stop while filtering the `Holidays` array, flagging a stop whose ETA lands on a holiday:
+
+```java
+"FieldFilled(/Shipment/Stops/Eta) And NumberOfFilledFields(/Shipment/Holidays*/HolidayDate Having [/Shipment/Holidays/HolidayDate] == [$/Shipment/Stops/Eta]) > 0"
+```
+
+**Row-order check — `CurrentRepetition`.** Each stop is compared against *all its predecessors*, so the ETAs must be chronologically ordered:
+
+```java
+"MaxValue(/Shipment/Stops*/Eta Having CurrentRepetition(/Shipment/Stops) < CurrentRepetition($/Shipment/Stops)) >= [/Shipment/Stops/Eta]"
+```
+
+If you think in SQL: parallel iteration is an *outer join* on the index field, the `$`-filter is a *correlated subquery*, and `CurrentRepetition` lets a row compare itself to its *predecessors* — all as declarative rule text. `gradle runCrossarray`'s "problems" document trips all four, each pointing at the offending row (`Demand[2]` HAM unmatched, `Demand[3]` CGN over-capacity, `Stops[2]` out of order, `Stops[3]` on a holiday). These depend on precise path, `$`-operator and asterisk syntax — get them wrong and the model fails at code generation with an `MVK_*` error.
+
+**Which row is missing.** `HAM` has a `Demand` row but no `Capacity` row. The error attaches to `Demand[2]/Units`, but the cause is a row that doesn't exist, so no ordinary pointer can name it. The kernel marks such a row with the repetition index `-5`, meaning "unknown". Since kernel 31.2, each message also lists the groups of fields that may have caused it, and for a missing row it adds the index value it looked for:
+
+```java
+for (Set<PartiallyKnownDocumentMultiPointer> group : message.getGroupsOfPossiblyCausingEntities()) {
+    for (PartiallyKnownDocumentMultiPointer pointer : group) {
+        pointer.semanticIndexValueForUnknownIndexGroup();   // Optional[HAM] for Capacity/Units at row -5
+    }
+}
+```
+
+`gradle runCrossarray` prints this under the error as `missing row: Shipment[1]/Capacity[?] with index value "HAM"`. A form can turn that into a precise hint, such as "add a capacity row for HAM", instead of a vague "demand and capacity don't match". The message's referenced fields point at the same `Capacity` row, but without the index value. A rule can narrow the list of possible causes with its `filterForPossiblyCausingEntities` property.
+
+**Docs.**
+
+- Validation-Language guide → *Rules* → *Rules and repeatability* (parallel iteration)
+- Validation-Language guide → *Operators and language constructs* → *Functional language constructs* (the `Having` filter, the `$`-operator, `CurrentRepetition`, `MaxValue`/`NumberOfFilledFields`)
+- Kernel changelog → *31.2.0* → *Added* (`getGroupsOfPossiblyCausingEntities`, `semanticIndexValueForUnknownIndexGroup`, `filterForPossiblyCausingEntities`). The guide sections above predate these.
+
+## 4. `ComputationDemo` — Computed / derived fields
+
+**The scenario.** Validation is only half of what the kernel does; the other half is **deriving** values. A weekly *Timesheet* with repeating *Days* needs a per-day pay, a week total, a tiered bonus, and the week's total cost including mileage — numbers you'd normally compute in service code and hope stay consistent with the data. Here they're part of the model.
+
+**What it shows.** Computations are declared in the model as a `Precondition | Calculation` table, evaluated by the *same generated code* as validation, and applied back onto the (immutable) document. The first three computations build on each other: a per-row calculation, an aggregate of a computed field, and a tiered calculation chosen by mutually exclusive preconditions. The fourth uses `SumOfTerms`, which is new in kernel 31:
+
+```java
+computation(dm, "/Sheet/Days/DayPayComp", dayPay, alt(null, "[Hours]*[Rate]"));        // per row
+computation(dm, "/Sheet/WeekPayComp",     weekPay, alt(null, "Sum(Days*/DayPay)"));     // aggregate of a computed field
+computation(dm, "/Sheet/BonusComp", bonus,                                             // tiered: mutually-exclusive preconditions
+        alt("[WeekPay] >= 1000",                       "RoundDown([WeekPay] * 0.10, 2)"),
+        alt("[WeekPay] >= 500 And [WeekPay] < 1000",   "RoundDown([WeekPay] * 0.05, 2)"),
+        alt("[WeekPay] < 500",                         "0.00"));
+computation(dm, "/Sheet/WeekCostComp", weekCost,                                        // sum of a per-row term (kernel 31)
+        alt(null, "SumOfTerms(Days*, [Hours] * [Rate] + [Km] * 0.30)"));
+```
+
+`WeekPay` depends on the computed `DayPay` (a cross-level dependency the engine orders for you), and `Bonus` selects a rate by mutually-exclusive preconditions. Only the inputs are supplied; the engine fills the rest:
+
+```java
+IDocumentComputationResult comp = rt.compute(input, cfg);
+DocumentV2 computed = comp.applyTo(input);          // immutable — a NEW document with the derived values
+Object weekPay = computed.fieldValue("Sheet[1]/WeekPay");   // 1040
+Object bonus   = computed.fieldValue("Sheet[1]/Bonus");     // 104  (>=1000 tier -> 10%)
+```
+
+Note the decimal-place discipline: `Bonus` is a 2-fraction-digit field, so the calculation rounds to 2 places (`RoundDown(..., 2)`) to match — a mismatch is itself an error. `gradle runComputation` feeds only hours and rates, then prints the engine-filled `DayPay` per day, `WeekPay = 1040`, and `Bonus = 104`. Because the calculations live in the model, a business analyst can change the bonus tiers without touching code — and (as §5 shows) the kernel even re-validates the derived values against their own formula.
+
+**`SumOfTerms`: totals without helper fields.** `Sum(Days*/DayPay)` can add up only one field, so the week's pay needs the per-row helper field `DayPay`. `SumOfTerms(Path*, Term)` evaluates any numeric term once per row and adds up the results. `WeekCost` uses it to combine labour and mileage in one expression, with no helper field:
+
+```
+SumOfTerms(Days*, [Hours] * [Rate] + [Km] * 0.30)     ;; 8·50.00 + 40·0.30 + 8·80.00 + 25·0.30 = 1059.50
+```
+
+A few rules apply:
+
+- The path must end in a repeatable group marked with `*`.
+- The term must be numeric. It can't contain `Having`, `CustomCondition`, `RepetitionNotUnique`, or another `SumOfTerms`.
+- An empty number field counts as `0`, as it does in `Sum`, so a row without numbers adds nothing.
+
+That last rule was measured against kernel 31.3.1 on 2026-11-06, with a variant of the demo input: with Tuesday's `Km` empty, `WeekCost` becomes `1052`, and adding a Wednesday row that holds only its day name leaves it at `1052`. Kernel 31.1.1 gave the same results.
+
+**Docs.**
+
+- Validation-Language guide → *Computation Rules* → *Computation tables*, *Preconditions*, *Common Precondition*, *Number of decimal places*, *Calculation cycles*
+- Developer guide → *Entry points to kernel-md* → *Validating a document / Computations on a document* (the `compute(...)` / `applyTo(...)` API)
+- The guide sections above predate `SumOfTerms`. The model editor's built-in function help lists it as *SumOfTerms(Path, Term)*.
+
+## 5. `LanguageDemo` — Interesting language features
+
+**The scenario.** A *vehicle inspection* form, chosen to surface four behaviours that differ markedly from how mainstream validators work.
+
+**What it shows.** Four standout language features in one model:
+
+```java
+// self-validating computation: TotalScore = Score1 + Score2 is ALSO a validation rule.
+// A document that carries TotalScore=99 (≠ 4+5) is an error — derived values are re-checked.
+ComputationBuilder…field(total, List.of(Pair.<String, String>of(null, "[Score1]+[Score2]")))
+        .modify(cb -> cb.errorCode("TOTAL_SCORE_MISMATCH") …) …;
+
+// enum categories + ->: enum values carry an attribute vector; branch on the GROUP, not each value.
+"[FuelType -> Emissions] == \"COMBUSTION\" And FieldNotFilled(EmissionsCert)"
+
+// Valid()/Invalid(): assemble a date from parts and detect impossible calendar dates (31 Feb).
+"Invalid(Date(Day, Month, Year))"
+
+// enum vs. string field: compares the enum's stored value (DIESEL), never its display text (Diesel).
+"FieldFilled(RegisteredFuel) And [FuelType] != [RegisteredFuel]"
+```
+
+The self-validating computation is the standout: a computed field isn't just *filled* by the engine, it's also *checked* — if a document carries a `TotalScore` that disagrees with `Score1 + Score2`, that's an error, so derived values can't silently drift out of sync. `gradle runLanguage`'s second document trips all four rules at once:
+
+- `TotalScore = 99` against scores of 4 and 5.
+- `DIESEL` is chosen without an emissions cert.
+- The date parts assemble to `31 February`.
+- The registered fuel is `Diesel`, the display text.
+
+Derived-fields-that-validate-themselves, attribute matrices on enum members, and calendar-validity of assembled dates are all outside the vocabulary of mainstream validators.
+
+**The self-check has its own error code.** The rule that re-checks a computed value is generated by the kernel, so you can't give it an error code the way you do for a rule. Since kernel 31.2, the computation sets it with `errorCode`. The demo uses `TOTAL_SCORE_MISMATCH`. Without it, the code falls back to the computation's name, `TotalScoreComp`, which is a model-internal name rather than a stable business code that a client can match on.
+
+**Enums compare by stored value.** An enumeration field stores a code (`DIESEL`) and shows a localized text (`Diesel`). When a rule compares it with a string field, the kernel compares the code. In the second document the registration says `Diesel`, the display text, so `FUEL_MISMATCH` fires even though a person would call the two equal. Kernel 30 rejected this comparison while generating code (`MVK_INVALID_COMPARE_ENUM_TO_STRING`); kernel 31 accepts it. The same applies when you compare an enumeration that has texts with one that doesn't. If your data might hold display texts, map them to codes before validation.
+
+**Docs.**
+
+- Validation-Language guide → *Computation Rules* → *Computation Rules as Validation Rules*
+- Kernel changelog → *31.2.0* → *Added* (the computation's `errorCode` property)
+- Validation-Language guide → *Models* → *Field types* (enumeration categories)
+- Validation-Language guide → *Operators and language constructs* → *Date and Time language constructs* (`Valid`/`Invalid`/`Date`)
+- Validation-Language guide → *Operators and language constructs* → *Comparison operations* → *Comparing strings and enumerations* (still describes the kernel 30 restriction)
+
+---
+
+# B. Working with the engine & documents
+
+## 6. `ExtensionDemo` — Extending the kernel
+
+**The scenario.** Sooner or later a check needs real code — a checksum, an external format, an algorithm the DSL doesn't (and shouldn't) have. A *Product catalog* entry has a barcode that must pass an EAN-13 checksum and a colour that must be a hex code. This is the bridge from cluster A (authoring rules) to cluster B (working with the engine in Java).
+
+**What it shows.** The two escape hatches — both registered on the processing config, so they're injected without changing the model — plus the type checking the kernel does for free:
+
+```java
+DocumentProcessingConfig cfg = DocumentProcessingConfig.builder(Locale.US)
+        .customConditionFactory(ICustomConditionFactory.fromMap(Map.of(
+                "Ean13Invalid", new Ean13ChecksumCondition("/Product/Barcode"))))
+        .customFieldTypeFactory(ICustomFieldTypeFactory.fromMap(Map.of(
+                "HexColor", new HexColorValidator())))
+        .build();
+```
+
+**Custom condition** — a Java predicate called from a rule as `CustomCondition Ean13Invalid`. It computes an EAN-13 barcode checksum (returning `true` = the rule fires = invalid):
+
+```java
+public boolean check(DocumentV2 document, Set<? extends DocumentMultiPointer> relevantEntities,
+        Set<DocumentPointer> formallyIncorrectEntities, PartiallyKnownDocumentMultiPointer errorEntityInstance) {
+    Object value = document.fieldValue(fieldPath);
+    return value != null && !isValidEan13(value.toString());   // mod-10 check digit
+}
+```
+```java
+.errorCondition("FieldFilled(Barcode) And CustomCondition Ean13Invalid")
+```
+
+**Custom field validator** — a field of a project-defined type `HexColor`, validated by a Java `ICustomFieldValidator` the kernel invokes during normal validation:
+
+```java
+public Optional<ICustomFieldTypeCheckError> validate(String value, ICustomFieldTypeValidationParam p, boolean isDisplayValue) {
+    if (value == null || value.isEmpty() || value.matches("#[0-9A-Fa-f]{6}")) return Optional.empty();
+    return Optional.of(new CheckError("HEX_COLOR_INVALID", "Color must be a hex code like #1A2B3C."));
+}
+```
+
+**Free formal errors.** A fractional value in an integer field needs no rule — the kernel's field-type checking reports it (with rule path `formalePruefung`, distinct from your rule errors):
+
+```
+[ERROR VALUE_ERROR] zahlHatDezimalTrenner  The value must be integer.   rule: formalePruefung
+[ERROR VALUE_ERROR] HEX_COLOR_INVALID       Color must be a hex code like #1A2B3C.
+[ERROR VALUE_ERROR] BARCODE_CHECKSUM        Barcode failed its EAN-13 checksum.   rule: /Product/BarcodeRule
+```
+
+The distinction between the two hatches matters: a **custom condition** is invoked *from a rule* (`CustomCondition Ean13Invalid`) and gets the whole document, so it can correlate fields; a **custom field validator** is bound to a *field type* and runs automatically wherever that type is used. `gradle runExtension`'s malformed product produces all three — the formal error (rule path `formalePruefung`), the hex-colour error, and the barcode-checksum error — showing how project code and the kernel's own field checks land in the same result list. This is the closest analog to a Zod `.refine`, but invoked from a separate, data-authored rule layer.
+
+**Docs.**
+
+- Developer guide → *Custom Condition*
+- Developer guide → *Custom Field Type* → *Create a field of type Custom*, *Implement your own logic*, *Create/Provide your Custom Field Type Factory*
+- Validation-Language guide → *Operators and language constructs* → *CustomCondition*
+- Validation-Language guide → *Appendix* → *Validation and formal validation* (the formal-vs-rule distinction)
+
+## 7. `DocumentApiDemo` — The document is a real data structure
+
+**The scenario.** A validator checks *your* objects and hands them back. The A12 kernel is different: it owns **the document** — a first-class, immutable data structure you build, read, diff, and sanitise through its API. This demo uses a `Recipe` with a repeating `Ingredients` list to show what that buys you, with no validation rules at all.
+
+**What it shows.** `DocumentV2` is a persistent (copy-on-write) tree with structural sharing, plus model-aware tooling — capabilities that sit outside what a code-first validator offers, because it never has a document of its own:
+
+```java
+// auto-vivifying write: setting Ingredients[3] creates empty rows [1] and [2]
+DocumentV2 v1 = DocumentV2.empty(DM_ID)
+        .withFieldValue("Recipe[1]/Title", "Pancakes")
+        .withFieldValue("Recipe[1]/Ingredients[3]/Name", "Milk");          // -> 3 rows
+
+DocumentV2 v2 = v1.withFieldValue("Recipe[1]/Title", "Fluffy Pancakes");  // a NEW document...
+assert v1 != v2;
+assert v1.group("Recipe[1]/Ingredients[3]") == v2.group("Recipe[1]/Ingredients[3]"); // ...that REUSES the unchanged subtree
+
+// built-in diff:
+DocumentChanges diff = DocumentV2Utils.compare(v1, v2, CompareConfig.builder().emptyAndNullAsAbsent(true).build());
+// -> UPDATED Recipe/Title : "Pancakes" -> "Fluffy Pancakes"
+
+// DM-aware tooling: coerce a raw string to the model's Java type, and strip fields not in the model
+Object grams = dmAware.convertToJavaTypeV2("/Recipe/Ingredients/Grams", "120", notes::add); // BigDecimal 120
+DocumentV2 cleaned = dmAware.removeUnknowns(docWithStrayField);
+```
+
+Each line is a distinct capability: **auto-vivification** means you set a deep path and the kernel materialises the missing parents; **structural sharing** means an edit copies only the changed spine and physically reuses the rest (the `==` assertion proves it — cheap snapshots and diffs); **`compare`** gives you change-tracking out of the box; and **`convertToJavaTypeV2`/`removeUnknowns`** turn raw inbound JSON into model-typed, model-clean data. `gradle runDocapi` prints each step. A persistent/immutable document tree with verifiable structural sharing, plus diffing and schema-driven coercion/sanitisation, is a data-framework feature set, not a validation one.
+
+**Docs.**
+
+- Developer guide → *Document API V2 (Java)* → *Updating Documents and Groups*, *DocumentPointer*, *Additional Utilities*
+- Developer guide → *Document API V2 (Java)* → *Further Resources*
+
+## 8. `PartialValidationDemo` — Incremental "wizard" validation
+
+**The scenario.** Multi-page forms have a UX trap: validate everything up front and page 1 lights up with errors about page 3; validate nothing and the user sails past mistakes. A 3-page *loan application* (Applicant → Employment → Loan) shows the kernel's answer — validate exactly what's currently in scope.
+
+**What it shows.** `validatePart` takes the set of fields the user can currently see and reports an error only if its rule's error field **and** every field the rule references are "relevant" — so the user is never nagged about a page they haven't reached, *and* a cross-page rule stays quiet until both its pages are in scope:
+
+```java
+Set<DocumentMultiPointer> page1 = Set.of(DocumentMultiPointer.ofPathWithAllWildcards("Applicant"));
+rt.validatePart(doc, page1, cfg);   // only Applicant-page errors
+```
+
+`gradle runPartial` runs the *same* document five ways and the contrast is the whole point: `validateFull` → NAME_REQUIRED + NOT_AFFORDABLE; page 1 → NAME_REQUIRED only; page 3 (Loan) **alone** → clean, because the affordability rule also references income (page 2), so it's held back; the review step (Employment + Loan together) → NOT_AFFORDABLE. The guarantee is one-directional and documented: partial validation never reports an error you can't currently fix, at the cost of deliberately *skipping* checks that aren't yet in scope. Mainstream validators are all-or-nothing per object; nothing there matches this relevance-scoped mode.
+
+**Docs.** Validation-Language guide → Appendix → *Full Validation and Partial Validation*.
+
+## 9. `CodegenDemo` — Compile a model to code
+
+**The scenario.** Everything so far ran the rules *dynamically* (the kernel generates and caches validation code on first use). But the same compiler can emit **standalone source** you ship and run yourself — and crucially, in more than one language. That's the kernel's headline differentiator: author the rules once, as data, and run them identically on the JVM backend *and* in the browser.
+
+**What it shows.** The same Playlist model is compiled to both a Java and a JavaScript validator from one call each:
+
+```java
+IDocumentModelService svc = new DocumentModelServiceFactory().createDocumentModelService();
+byte[] javaZip = svc.generateValidationCode(model, () -> ProgrammingLanguage.JAVA, new Properties(), notes::add);
+byte[] jsZip   = svc.generateValidationCode(model, jsConfig /* JAVASCRIPT + WRAPPED_IN_FUNCTION_EXTENDED */, null, notes::add);
+```
+
+Each call returns a ZIP:
+
+- **Java:** a self-contained Gradle project, with the sources under `src/main/java/` and a `build.gradle` that depends on the matching runtime, `kernel-core-runtime-31-3`. The generated code imports that runtime's version-specific packages, so you must regenerate it whenever you upgrade the kernel.
+- **JavaScript:** a `.js` validator plus a `.d.ts` typings file. (The kernel calls this target `JAVASCRIPT`; there's no separate `TYPESCRIPT` target.)
+
+`gradle runCodegen` writes both ZIPs to `output/iteration/generated/` (it reuses `IterationDemo`'s model) and lists their entries. §11 runs generated JavaScript in Node.js. The significance for an evaluator: a single business-analyst-authored rule-set becomes a backend validator *and* a matching frontend validator with identical semantics — no library here is multi-language (JSON Schema is portable data, but you still need a different validator engine per language and lose parity as soon as custom keywords appear).
+
+**Docs.**
+
+- Developer guide → *Entry points to kernel-md* → *Generate validation code from document model*
+- Developer guide → *Supported Languages*, and *Introduction* → *Architecture* and *Artifacts* (Java vs TS/JS artifacts)
+
+## 10. `TypedAccessorDemo` — Typed accessor overlays
+
+**The scenario.** `DocumentV2` is dynamic — `doc.fieldValue("Subscription[1]/Tier")` returns an `Object` and you have to *know* the path and the type. For developers who want IDE autocomplete and compile-time safety, the kernel can generate typed views for a specific model. This *Subscription* demo contrasts the untyped access with the generated typed access over the very same document.
+
+**What it shows.** A build-time generator emits view + pointer classes for the model; you wrap an ordinary document and navigate it with real types. It's the inverse of inferring a type *from* a schema (Zod's `z.infer`): the kernel emits a typed navigation API *over* a dynamic document, so a rename in the model turns into a **compile error** instead of a runtime `null`.
+
+```java
+DocumentV2 doc = DocumentV2.empty("subscription")
+        .withFieldValue("Subscription[1]/Tier", "PRO")
+        .withFieldValue("Subscription[1]/Addons[1]/Name", "Extra Seats")
+        .withFieldValue("Subscription[1]/Addons[1]/MonthlyFee", new BigDecimal("9.99"));
+
+doc.fieldValue("Subscription[1]/Tier");              // untyped: Object, string path, you must know the type
+
+Subscription view = Subscription._viewOf(doc);       // generated overlay over the SAME document (no copy)
+view.subscription().tier();                          // a generated `Tier` enum — autocompleted
+for (var addon : view.subscription().addons()) {     // List<Addons>, strongly typed
+    addon.name();        // String
+    addon.monthlyFee();  // BigDecimal  — rename the field in the model and this stops COMPILING
+}
+```
+
+**How it's wired (and why it's safe).** The generator is a command-line tool that ships with `kernel-md-facade` as its `typed-accessor-gen-cli` jar (before kernel 31 it was a separate artifact). It runs in an **isolated** Gradle task (`genTypedAccessors`) over a committed model JSON (`src/main/resources/models/subscription.dm.json`, produced by `genSubscriptionModel`). The generated classes + the demo live in their own `typedAccessor` source set, so the other demos compile and run completely independently — a codegen failure can't break the rest of the build. (It's the one Java demo that needs build-time code generation.)
+
+**Docs.** Developer guide → *Typed Accessor Classes for Compile-Time Type Checks* (overlay mode).
+
+## 11. TypeScript parity — the same rules in Node.js
+
+**The scenario.** The kernel's central promise is that one rule set behaves the same on the server and in the browser. §9 shows that the kernel *can* compile a model to JavaScript. This demo checks the promise: it runs three models in Node.js with the kernel's TypeScript runtime and compares every result with what the Java runtime reported for the same documents.
+
+**What it shows.** The TypeScript side has no code generator, so the flow has two steps:
+
+1. **Java compiles.** `JsExport` turns each persisted model into plain JavaScript and records Java's own results for the sample documents.
+2. **Node runs.** `ts/src/parity.ts` loads that JavaScript into the TypeScript runtime, validates the same documents, runs the timesheet's computations, and compares.
+
+The TypeScript API is small:
+
+```ts
+import { DocumentRtServiceFactory, GeneratedCodeAccessorFactory } from "@com.mgmtp.a12.kernel/kernel-md-facade";
+import { defaultLocalizerFactory } from "@com.mgmtp.a12.utils/utils-localization";
+
+const accessor = new GeneratedCodeAccessorFactory().createScriptAccessor(script);   // JS generated by Java
+const service  = DocumentRtServiceFactory.createDocumentRtService(accessor);
+
+const result = service.validateFull(document);           // a plain JSON object, same shape as examples/*.json
+result.noErrorOccurred;                                   // false
+result.messages[0].errorCode;                             // "CUSTOMER_REQUIRED"
+defaultLocalizerFactory({ locale: { language: "en", country: "US" } })(...result.messages[0].errorText);
+                                                          // "Customer name is required."
+const computed = service.compute(input).appliedTo(input); // WeekPay, Bonus, WeekCost (SumOfTerms) filled in
+```
+
+`gradle runTs` prints each document's messages in the same format as the Java demos, followed by a verdict:
+
+```
+=== purchase-order/invalid.json ===
+  result: INVALID (errors present)
+  [ERROR   OMISSION_ERROR] CUSTOMER_REQUIRED Customer name is required.
+        at field: Order[1]/CustomerName   rule: /Order/CustomerRequiredRule
+  …
+  ✔ same messages as Java
+…
+All 8 results match the Java runtime.
+```
+
+Seven documents and one computation are compared: severity, message type, error code, field, rule, and the rendered English text all match. So does every field of the computed timesheet, including kernel 31's `SumOfTerms` total. If anything differs, or if fewer checks run than Java recorded, the task fails.
+
+A few things are worth knowing when you use the TypeScript runtime yourself:
+
+- **Generate `STANDARD` JavaScript.** `createScriptAccessor` accepts only code generated with `JsCodeGenConfig.STANDARD`. The module with typings that §9 produces for browsers and module loaders (`WRAPPED_IN_FUNCTION_EXTENDED`) fails to load there.
+- **The script runs through `new Function`.** A browser security policy that forbids `eval` blocks it. In that case the kernel documentation asks you to contact the A12 team.
+- **Messages are localizable, not text.** `errorText` holds keys, arguments, and the model's texts; `@com.mgmtp.a12.utils/utils-localization` turns them into a string for a locale.
+- **Numbers lose their scale.** Documents are plain JSON, so a rate of `50.00` becomes `50`. The Java runtime keeps the `BigDecimal` scale. The values are numerically equal. To see the difference, open [`computed.json`](../examples/computation/computed.json) next to [`timesheet-computed-by-ts.json`](../examples/typescript/timesheet-computed-by-ts.json).
+
+**How it's wired.** The kit builds the A12 npm packages but publishes them to no registry. `gradle tsVendor` copies the tarballs from the kit's working directory (`$A12_BOOTSTRAP_HOME`, by default `../.a12-bootstrap/2026.06-ext2`) into `ts/vendor/`. `tsInstall` runs `pnpm install`, and `runTs` type-checks the script with `tsc` and runs it with Node's built-in TypeScript support. `runTs` needs Node.js 24 or newer and pnpm, so `gradle showcases` doesn't include it.
+
+**Docs.**
+
+- Developer guide → *Entry points to kernel-md* → *Validating a document / Computations on a document* → *TypeScript*
+- Developer guide → *Entry points to kernel-md* → *Generate validation code from document model*
+- Developer guide → *Introduction* → *Architecture* (one rule set for server and client)
+
+---
+
+## How it compares to mainstream validators
+
+The recurring theme across these demos is that the kernel ships as *declarative operators* what most validators leave you to hand-write. For a feature-by-feature comparison against five mainstream validators — **Zod** (TypeScript), **Pydantic** (Python), **JSON Schema**, **Jakarta Bean Validation / Hibernate** (Java), and **FluentValidation** (.NET), each introduced from scratch — see **[`COMPARISON.md`](COMPARISON.md)**.
+
+In short, the kernel's clearest differentiators are: one data-authored rule-set compiled to **Java + JavaScript + Groovy** (`CodegenDemo`); **filtered aggregation** (`Sum/Count/Max … Having`, `IterationDemo`/`CrossArrayDemo`); **cross-row uniqueness with an automatic per-row error pointer** (`IterationDemo`); and **computed fields + localized messages authored as model data** (`ComputationDemo`, every bilingual message).
+
+## More interesting language features (explainer — not separate demos)
+
+A few kernel behaviours read better as notes than as their own demo (the full evaluation semantics — truth values, missing data, the "required" property, numeric/date rules — are in [`KERNEL-SEMANTICS.md`](KERNEL-SEMANTICS.md)):
+
+- **The DSL keywords are bilingual.** `conditionLanguage` selects the language the *rule keywords themselves* are written in — the same rule is `AllFieldsFilled(...)` in an `en_US` model and `AlleFelderAngegeben(...)` in a `de_DE` one. Localization elsewhere is message-only.
+- **No negation operator.** There is no `Not`; instead a vocabulary of paired positive/negative predicates (`AllFieldsFilled`/`NotAllFieldsFilled`, `NoFieldFilled`, `AtLeastOneFieldFilled`, `NotExactlyOneFieldFilled`, …) — a deliberate readability/decidability trade.
+- **Three-valued null semantics, and no empty string.** A missing *number* defaults to `0` (so `[Amount] < 100` fires when Amount is empty — guard with `FieldNotFilled(Amount) Or …`); missing string/date/enum make a comparison "not evaluated"; and `[F] == ""` is *never* true.
+- **Decimal-scale discipline.** Comparing two numbers of different max-fraction-digits via `==`/`!=` is itself an error unless you round; `RoundAccounting` rounds half *away from zero* (not banker's rounding). Accounting-grade numeric strictness in a schema language.
+- **Authoring gotchas worth knowing** — don't name a field after a DSL keyword (e.g. `Date`); a rule must live in a group; a rule's error field must be referenced in its own condition; prefer absolute paths across sibling groups; the `$`-operator precedes the whole path. Each surfaces as a specific `MVK_*` code-generation error.
+
+## Powerful, but not wired up in this demo
+
+These are real, documented kernel capabilities we deliberately did **not** demo here — either they need a field type the in-code builder doesn't expose, build-time code generation, or a kernel subtree this OSS build doesn't produce. Listed so you know they exist:
+
+- **Imprecise / partially-known dates** — `DateFragment` (e.g. `YYYY`, `MM-DD`), date precision (`DAY_OPTIONAL`), `ValueAsDate(F, LastDay)`, and a model-level `BaseYear`. No mainstream library can represent "born in February, day unknown." *Why not here:* the model editor offers these types for import only, so they're rare in real models. The in-code builder does support them (`DateFragmentTypeBuilder`).
+- **Date-range overlap** — a `DateRange` field type plus `DateRangesOverlap(...)` to detect overlapping intervals across rows (e.g. double-booked periods) in one line. *Why not here:* it needs a booking-style domain of its own. The in-code builder supports the `DateRange` type (`DateRangeTypeBuilder`).
+- **Mapping with provenance** — `IMappingService.transferData(...)` transfers data between models and returns which source field produced each target value (data lineage). *Why not here:* it needs a second (target) model plus a mapping model. The API itself is available through `kernel-md-facade`.
+- **Model migration & modular models** — the kernel migrates older DM JSON forward with `IDocumentModelMigrator` (the models in `examples/` went from format `28.4.0` to `29.4.0` with kernel 31.1, and to `29.8.0` with kernel 31.3). Models can also be composed from includes and type definitions; since kernel 31, turning such a model into one self-contained DM is the job of *A12 Workspace Conversion*, because `IDocumentModelService#expand` was removed. Both features need an old or multi-file model to be worth showing.
+
+For the full surface, see the A12 docs & forum: https://geta12.com/#/docs
