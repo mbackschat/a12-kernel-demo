@@ -1,0 +1,203 @@
+{
+  "header": {
+    "id": "timesheet",
+    "modelType": "document",
+    "modelVersion": "28.4.0",
+    "locales": [
+      {
+        "code": "en_US"
+      }
+    ],
+    "labels": [],
+    "annotations": [],
+    "modelReferences": []
+  },
+  "content": {
+    "modelInfo": {
+      "name": "timesheet",
+      "variant": "cockpit",
+      "revision": "Arbeitsversion",
+      "immutable": false
+    },
+    "modelConfig": {
+      "decimalSeparator": ".",
+      "timeZone": "Europe/Berlin",
+      "conditionLanguage": {
+        "code": "en_US"
+      },
+      "fieldRefByShortNameAllowed": true
+    },
+    "modelRoot": {
+      "rootGroups": [
+        {
+          "type": "Group",
+          "id": "/Sheet",
+          "name": "Sheet",
+          "Group": {
+            "repeatability": 1,
+            "elements": [
+              {
+                "type": "Field",
+                "id": "/Sheet/Employee",
+                "name": "Employee",
+                "Field": {
+                  "fieldType": {
+                    "type": "StringType"
+                  }
+                }
+              },
+              {
+                "type": "Field",
+                "id": "/Sheet/WeekPay",
+                "name": "WeekPay",
+                "Field": {
+                  "fieldType": {
+                    "type": "NumberType",
+                    "NumberType": {
+                      "maxFractionalDigits": 2
+                    }
+                  }
+                }
+              },
+              {
+                "type": "Field",
+                "id": "/Sheet/Bonus",
+                "name": "Bonus",
+                "Field": {
+                  "fieldType": {
+                    "type": "NumberType",
+                    "NumberType": {
+                      "maxFractionalDigits": 2
+                    }
+                  }
+                }
+              },
+              {
+                "type": "Group",
+                "id": "/Sheet/Days",
+                "name": "Days",
+                "Group": {
+                  "repeatability": 7,
+                  "elements": [
+                    {
+                      "type": "Field",
+                      "id": "/Sheet/Days/Day",
+                      "name": "Day",
+                      "Field": {
+                        "fieldType": {
+                          "type": "StringType"
+                        }
+                      }
+                    },
+                    {
+                      "type": "Field",
+                      "id": "/Sheet/Days/Hours",
+                      "name": "Hours",
+                      "Field": {
+                        "fieldType": {
+                          "type": "NumberType"
+                        }
+                      }
+                    },
+                    {
+                      "type": "Field",
+                      "id": "/Sheet/Days/Rate",
+                      "name": "Rate",
+                      "Field": {
+                        "fieldType": {
+                          "type": "NumberType",
+                          "NumberType": {
+                            "maxFractionalDigits": 2
+                          }
+                        }
+                      }
+                    },
+                    {
+                      "type": "Field",
+                      "id": "/Sheet/Days/DayPay",
+                      "name": "DayPay",
+                      "Field": {
+                        "fieldType": {
+                          "type": "NumberType",
+                          "NumberType": {
+                            "maxFractionalDigits": 2
+                          }
+                        }
+                      }
+                    },
+                    {
+                      "type": "Computation",
+                      "id": "/Sheet/Days/DayPayComp",
+                      "name": "DayPayComp",
+                      "Computation": {
+                        "computedFieldRelPath": "../DayPay",
+                        "computationAlternatives": [
+                          {
+                            "operation": "[Hours]*[Rate]"
+                          }
+                        ],
+                        "errorMessage": [
+                          {
+                            "locale": "en_US",
+                            "text": "errorText"
+                          }
+                        ]
+                      }
+                    }
+                  ]
+                }
+              },
+              {
+                "type": "Computation",
+                "id": "/Sheet/WeekPayComp",
+                "name": "WeekPayComp",
+                "Computation": {
+                  "computedFieldRelPath": "../WeekPay",
+                  "computationAlternatives": [
+                    {
+                      "operation": "Sum(Days*/DayPay)"
+                    }
+                  ],
+                  "errorMessage": [
+                    {
+                      "locale": "en_US",
+                      "text": "errorText"
+                    }
+                  ]
+                }
+              },
+              {
+                "type": "Computation",
+                "id": "/Sheet/BonusComp",
+                "name": "BonusComp",
+                "Computation": {
+                  "computedFieldRelPath": "../Bonus",
+                  "computationAlternatives": [
+                    {
+                      "operation": "RoundDown([WeekPay] * 0.10, 2)",
+                      "precondition": "[WeekPay] >= 1000"
+                    },
+                    {
+                      "operation": "RoundDown([WeekPay] * 0.05, 2)",
+                      "precondition": "[WeekPay] >= 500 And [WeekPay] < 1000"
+                    },
+                    {
+                      "operation": "0.00",
+                      "precondition": "[WeekPay] < 500"
+                    }
+                  ],
+                  "errorMessage": [
+                    {
+                      "locale": "en_US",
+                      "text": "errorText"
+                    }
+                  ]
+                }
+              }
+            ]
+          }
+        }
+      ]
+    }
+  }
+}

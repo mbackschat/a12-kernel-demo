@@ -1,0 +1,13 @@
+{
+  "Reg": {
+    "AccessPin": "12",
+    "Decision": "DECLINED",
+    "EventDate": "2020-01-01",
+    "PaidFee": 210,
+    "PassportExpiry": "2026-07-01",
+    "PromoCode": "spring!",
+    "QuotedFee": 249,
+    "SeatBlock": "BACKSTAGE",
+    "TicketCode": "US-991200"
+  }
+}

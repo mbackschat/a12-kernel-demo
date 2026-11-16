@@ -1,0 +1,255 @@
+{
+  "header": {
+    "id": "vehicle-inspection",
+    "modelType": "document",
+    "modelVersion": "28.4.0",
+    "locales": [
+      {
+        "code": "en_US"
+      }
+    ],
+    "labels": [],
+    "annotations": [],
+    "modelReferences": []
+  },
+  "content": {
+    "modelInfo": {
+      "name": "vehicle-inspection",
+      "variant": "cockpit",
+      "revision": "Arbeitsversion",
+      "immutable": false
+    },
+    "modelConfig": {
+      "decimalSeparator": ".",
+      "timeZone": "Europe/Berlin",
+      "conditionLanguage": {
+        "code": "en_US"
+      },
+      "fieldRefByShortNameAllowed": true
+    },
+    "modelRoot": {
+      "rootGroups": [
+        {
+          "type": "Group",
+          "id": "/Inspection",
+          "name": "Inspection",
+          "Group": {
+            "repeatability": 1,
+            "elements": [
+              {
+                "type": "Field",
+                "id": "/Inspection/FuelType",
+                "name": "FuelType",
+                "Field": {
+                  "fieldType": {
+                    "type": "EnumerationType",
+                    "EnumerationType": {
+                      "values": [
+                        {
+                          "value": "PETROL",
+                          "label": [
+                            {
+                              "locale": "en_US",
+                              "text": "Petrol"
+                            },
+                            {
+                              "locale": "de_DE",
+                              "text": "Benzin"
+                            }
+                          ]
+                        },
+                        {
+                          "value": "DIESEL",
+                          "label": [
+                            {
+                              "locale": "en_US",
+                              "text": "Diesel"
+                            },
+                            {
+                              "locale": "de_DE",
+                              "text": "Diesel"
+                            }
+                          ]
+                        },
+                        {
+                          "value": "ELECTRIC",
+                          "label": [
+                            {
+                              "locale": "en_US",
+                              "text": "Electric"
+                            },
+                            {
+                              "locale": "de_DE",
+                              "text": "Elektrisch"
+                            }
+                          ]
+                        }
+                      ],
+                      "categories": [
+                        {
+                          "name": "Emissions",
+                          "values": [
+                            "COMBUSTION",
+                            "COMBUSTION",
+                            "ZERO"
+                          ]
+                        }
+                      ]
+                    }
+                  }
+                }
+              },
+              {
+                "type": "Field",
+                "id": "/Inspection/EmissionsCert",
+                "name": "EmissionsCert",
+                "Field": {
+                  "fieldType": {
+                    "type": "StringType"
+                  }
+                }
+              },
+              {
+                "type": "Field",
+                "id": "/Inspection/Score1",
+                "name": "Score1",
+                "Field": {
+                  "fieldType": {
+                    "type": "NumberType"
+                  }
+                }
+              },
+              {
+                "type": "Field",
+                "id": "/Inspection/Score2",
+                "name": "Score2",
+                "Field": {
+                  "fieldType": {
+                    "type": "NumberType"
+                  }
+                }
+              },
+              {
+                "type": "Field",
+                "id": "/Inspection/TotalScore",
+                "name": "TotalScore",
+                "Field": {
+                  "fieldType": {
+                    "type": "NumberType"
+                  }
+                }
+              },
+              {
+                "type": "Field",
+                "id": "/Inspection/Day",
+                "name": "Day",
+                "Field": {
+                  "fieldType": {
+                    "type": "NumberType",
+                    "NumberType": {
+                      "minValue": 1,
+                      "maxValue": 31
+                    }
+                  }
+                }
+              },
+              {
+                "type": "Field",
+                "id": "/Inspection/Month",
+                "name": "Month",
+                "Field": {
+                  "fieldType": {
+                    "type": "NumberType",
+                    "NumberType": {
+                      "minValue": 1,
+                      "maxValue": 12
+                    }
+                  }
+                }
+              },
+              {
+                "type": "Field",
+                "id": "/Inspection/Year",
+                "name": "Year",
+                "Field": {
+                  "fieldType": {
+                    "type": "NumberType",
+                    "NumberType": {
+                      "minValue": 0,
+                      "maxValue": 9999
+                    }
+                  }
+                }
+              },
+              {
+                "type": "Computation",
+                "id": "/Inspection/TotalScoreComp",
+                "name": "TotalScoreComp",
+                "Computation": {
+                  "computedFieldRelPath": "../TotalScore",
+                  "computationAlternatives": [
+                    {
+                      "operation": "[Score1]+[Score2]"
+                    }
+                  ],
+                  "errorMessage": [
+                    {
+                      "locale": "en_US",
+                      "text": "TotalScore must equal Score1 + Score2."
+                    },
+                    {
+                      "locale": "de_DE",
+                      "text": "Gesamtpunktzahl muss Score1 + Score2 entsprechen."
+                    }
+                  ]
+                }
+              },
+              {
+                "type": "Rule",
+                "id": "/Inspection/EmissionsCertRule",
+                "name": "EmissionsCertRule",
+                "Rule": {
+                  "errorEntityRelPath": "../EmissionsCert",
+                  "errorCode": "EMISSIONS_CERT_REQUIRED",
+                  "errorCondition": "[FuelType -> Emissions] == \"COMBUSTION\" And FieldNotFilled(EmissionsCert)",
+                  "severity": "ERROR",
+                  "errorMessage": [
+                    {
+                      "locale": "en_US",
+                      "text": "Combustion vehicles require an emissions certificate."
+                    },
+                    {
+                      "locale": "de_DE",
+                      "text": "Verbrenner benötigen eine Abgasbescheinigung."
+                    }
+                  ]
+                }
+              },
+              {
+                "type": "Rule",
+                "id": "/Inspection/InvalidDateRule",
+                "name": "InvalidDateRule",
+                "Rule": {
+                  "errorEntityRelPath": "../Day",
+                  "errorCode": "INVALID_DATE",
+                  "errorCondition": "Invalid(Date(Day, Month, Year))",
+                  "severity": "ERROR",
+                  "errorMessage": [
+                    {
+                      "locale": "en_US",
+                      "text": "The inspection date is not a real calendar date."
+                    },
+                    {
+                      "locale": "de_DE",
+                      "text": "Das Prüfdatum ist kein gültiges Kalenderdatum."
+                    }
+                  ]
+                }
+              }
+            ]
+          }
+        }
+      ]
+    }
+  }
+}

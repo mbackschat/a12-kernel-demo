@@ -1,0 +1,162 @@
+{
+  "header": {
+    "id": "playlist",
+    "modelType": "document",
+    "modelVersion": "28.4.0",
+    "locales": [
+      {
+        "code": "en_US"
+      }
+    ],
+    "labels": [],
+    "annotations": [],
+    "modelReferences": []
+  },
+  "content": {
+    "modelInfo": {
+      "name": "playlist",
+      "variant": "cockpit",
+      "revision": "Arbeitsversion",
+      "immutable": false
+    },
+    "modelConfig": {
+      "decimalSeparator": ".",
+      "timeZone": "Europe/Berlin",
+      "conditionLanguage": {
+        "code": "en_US"
+      },
+      "fieldRefByShortNameAllowed": true
+    },
+    "modelRoot": {
+      "rootGroups": [
+        {
+          "type": "Group",
+          "id": "/Playlist",
+          "name": "Playlist",
+          "Group": {
+            "repeatability": 1,
+            "elements": [
+              {
+                "type": "Field",
+                "id": "/Playlist/Name",
+                "name": "Name",
+                "Field": {
+                  "fieldType": {
+                    "type": "StringType"
+                  }
+                }
+              },
+              {
+                "type": "Group",
+                "id": "/Playlist/Tracks",
+                "name": "Tracks",
+                "Group": {
+                  "repeatability": 200,
+                  "elements": [
+                    {
+                      "type": "Field",
+                      "id": "/Playlist/Tracks/Title",
+                      "name": "Title",
+                      "Field": {
+                        "fieldType": {
+                          "type": "StringType"
+                        }
+                      }
+                    },
+                    {
+                      "type": "Field",
+                      "id": "/Playlist/Tracks/Seconds",
+                      "name": "Seconds",
+                      "Field": {
+                        "fieldType": {
+                          "type": "NumberType",
+                          "NumberType": {
+                            "positivesOnly": true,
+                            "minValue": 1
+                          }
+                        }
+                      }
+                    },
+                    {
+                      "type": "Field",
+                      "id": "/Playlist/Tracks/Explicit",
+                      "name": "Explicit",
+                      "Field": {
+                        "fieldType": {
+                          "type": "BooleanType"
+                        }
+                      }
+                    },
+                    {
+                      "type": "Rule",
+                      "id": "/Playlist/Tracks/UniqueTitleRule",
+                      "name": "UniqueTitleRule",
+                      "Rule": {
+                        "errorEntityRelPath": "../Title",
+                        "errorCode": "DUPLICATE_TITLE",
+                        "errorCondition": "RepetitionNotUnique(Title @From RuleGroup)",
+                        "severity": "ERROR",
+                        "errorMessage": [
+                          {
+                            "locale": "en_US",
+                            "text": "The track '$Title.value$' appears more than once."
+                          },
+                          {
+                            "locale": "de_DE",
+                            "text": "Der Titel '$Title.value$' kommt mehrfach vor."
+                          }
+                        ]
+                      }
+                    }
+                  ]
+                }
+              },
+              {
+                "type": "Rule",
+                "id": "/Playlist/TooLongRule",
+                "name": "TooLongRule",
+                "Rule": {
+                  "errorEntityRelPath": "../Name",
+                  "errorCode": "PLAYLIST_TOO_LONG",
+                  "errorCondition": "FieldFilled(Name) And Sum(Tracks*/Seconds) > 3600",
+                  "severity": "ERROR",
+                  "errorMessage": [
+                    {
+                      "locale": "en_US",
+                      "text": "The playlist exceeds one hour of total running time."
+                    },
+                    {
+                      "locale": "de_DE",
+                      "text": "Die Wiedergabeliste überschreitet eine Stunde Gesamtspielzeit."
+                    }
+                  ]
+                }
+              },
+              {
+                "type": "Rule",
+                "id": "/Playlist/ExplicitHeavyRule",
+                "name": "ExplicitHeavyRule",
+                "Rule": {
+                  "errorEntityRelPath": "../Name",
+                  "errorCode": "EXPLICIT_HEAVY",
+                  "errorCondition": "FieldFilled(Name) And Sum(Tracks*/Seconds Having [Tracks/Explicit]==True) > 600",
+                  "severity": "WARNING",
+                  "errorMessage": [
+                    {
+                      "locale": "en_US",
+                      "text": "Over 10 minutes of explicit tracks — consider a clean version."
+                    },
+                    {
+                      "locale": "de_DE",
+                      "text": "Über 10 Minuten explizite Titel — ggf. eine saubere Version anbieten."
+                    }
+                  ]
+                }
+              }
+            ]
+          }
+        }
+      ]
+    }
+  }
+}

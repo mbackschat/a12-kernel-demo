@@ -1,0 +1,188 @@
+{
+  "header": {
+    "id": "loan-application",
+    "modelType": "document",
+    "modelVersion": "28.4.0",
+    "locales": [
+      {
+        "code": "en_US"
+      }
+    ],
+    "labels": [],
+    "annotations": [],
+    "modelReferences": []
+  },
+  "content": {
+    "modelInfo": {
+      "name": "loan-application",
+      "variant": "cockpit",
+      "revision": "Arbeitsversion",
+      "immutable": false
+    },
+    "modelConfig": {
+      "decimalSeparator": ".",
+      "timeZone": "Europe/Berlin",
+      "conditionLanguage": {
+        "code": "en_US"
+      },
+      "fieldRefByShortNameAllowed": true
+    },
+    "modelRoot": {
+      "rootGroups": [
+        {
+          "type": "Group",
+          "id": "/Applicant",
+          "name": "Applicant",
+          "Group": {
+            "repeatability": 1,
+            "elements": [
+              {
+                "type": "Field",
+                "id": "/Applicant/FullName",
+                "name": "FullName",
+                "Field": {
+                  "fieldType": {
+                    "type": "StringType"
+                  }
+                }
+              },
+              {
+                "type": "Field",
+                "id": "/Applicant/Ssn",
+                "name": "Ssn",
+                "Field": {
+                  "fieldType": {
+                    "type": "StringType"
+                  }
+                }
+              },
+              {
+                "type": "Rule",
+                "id": "/Applicant/NameRequiredRule",
+                "name": "NameRequiredRule",
+                "Rule": {
+                  "errorEntityRelPath": "../FullName",
+                  "errorCode": "NAME_REQUIRED",
+                  "errorCondition": "FieldNotFilled(FullName)",
+                  "severity": "ERROR",
+                  "errorMessage": [
+                    {
+                      "locale": "en_US",
+                      "text": "Applicant name is required."
+                    },
+                    {
+                      "locale": "de_DE",
+                      "text": "Name des Antragstellers ist erforderlich."
+                    }
+                  ]
+                }
+              }
+            ]
+          }
+        },
+        {
+          "type": "Group",
+          "id": "/Employment",
+          "name": "Employment",
+          "Group": {
+            "repeatability": 1,
+            "elements": [
+              {
+                "type": "Field",
+                "id": "/Employment/Employer",
+                "name": "Employer",
+                "Field": {
+                  "fieldType": {
+                    "type": "StringType"
+                  }
+                }
+              },
+              {
+                "type": "Field",
+                "id": "/Employment/MonthlyIncome",
+                "name": "MonthlyIncome",
+                "Field": {
+                  "fieldType": {
+                    "type": "NumberType"
+                  }
+                }
+              },
+              {
+                "type": "Rule",
+                "id": "/Employment/IncomeRequiredRule",
+                "name": "IncomeRequiredRule",
+                "Rule": {
+                  "errorEntityRelPath": "../MonthlyIncome",
+                  "errorCode": "INCOME_REQUIRED",
+                  "errorCondition": "FieldNotFilled(MonthlyIncome)",
+                  "severity": "ERROR",
+                  "errorMessage": [
+                    {
+                      "locale": "en_US",
+                      "text": "Monthly income is required."
+                    },
+                    {
+                      "locale": "de_DE",
+                      "text": "Monatliches Einkommen ist erforderlich."
+                    }
+                  ]
+                }
+              }
+            ]
+          }
+        },
+        {
+          "type": "Group",
+          "id": "/Loan",
+          "name": "Loan",
+          "Group": {
+            "repeatability": 1,
+            "elements": [
+              {
+                "type": "Field",
+                "id": "/Loan/Amount",
+                "name": "Amount",
+                "Field": {
+                  "fieldType": {
+                    "type": "NumberType"
+                  }
+                }
+              },
+              {
+                "type": "Field",
+                "id": "/Loan/TermMonths",
+                "name": "TermMonths",
+                "Field": {
+                  "fieldType": {
+                    "type": "NumberType"
+                  }
+                }
+              },
+              {
+                "type": "Rule",
+                "id": "/Loan/AffordabilityRule",
+                "name": "AffordabilityRule",
+                "Rule": {
+                  "errorEntityRelPath": "../Amount",
+                  "errorCode": "NOT_AFFORDABLE",
+                  "errorCondition": "FieldFilled(Amount) And FieldFilled(/Employment/MonthlyIncome) And [/Loan/Amount] > [/Employment/MonthlyIncome] * 100",
+                  "severity": "ERROR",
+                  "errorMessage": [
+                    {
+                      "locale": "en_US",
+                      "text": "Loan amount exceeds 100x monthly income."
+                    },
+                    {
+                      "locale": "de_DE",
+                      "text": "Darlehensbetrag übersteigt das 100-fache Monatseinkommen."
+                    }
+                  ]
+                }
+              }
+            ]
+          }
+        }
+      ]
+    }
+  }
+}

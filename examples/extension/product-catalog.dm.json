@@ -1,0 +1,99 @@
+{
+  "header": {
+    "id": "product-catalog",
+    "modelType": "document",
+    "modelVersion": "28.4.0",
+    "locales": [
+      {
+        "code": "en_US"
+      }
+    ],
+    "labels": [],
+    "annotations": [],
+    "modelReferences": []
+  },
+  "content": {
+    "modelInfo": {
+      "name": "product-catalog",
+      "variant": "cockpit",
+      "revision": "Arbeitsversion",
+      "immutable": false
+    },
+    "modelConfig": {
+      "decimalSeparator": ".",
+      "timeZone": "Europe/Berlin",
+      "conditionLanguage": {
+        "code": "en_US"
+      },
+      "fieldRefByShortNameAllowed": true
+    },
+    "modelRoot": {
+      "rootGroups": [
+        {
+          "type": "Group",
+          "id": "/Product",
+          "name": "Product",
+          "Group": {
+            "repeatability": 1,
+            "elements": [
+              {
+                "type": "Field",
+                "id": "/Product/Barcode",
+                "name": "Barcode",
+                "Field": {
+                  "fieldType": {
+                    "type": "StringType"
+                  }
+                }
+              },
+              {
+                "type": "Field",
+                "id": "/Product/Color",
+                "name": "Color",
+                "Field": {
+                  "fieldType": {
+                    "type": "CustomFieldType",
+                    "CustomFieldType": {
+                      "name": "HexColor"
+                    }
+                  }
+                }
+              },
+              {
+                "type": "Field",
+                "id": "/Product/StockUnits",
+                "name": "StockUnits",
+                "Field": {
+                  "fieldType": {
+                    "type": "NumberType"
+                  }
+                }
+              },
+              {
+                "type": "Rule",
+                "id": "/Product/BarcodeRule",
+                "name": "BarcodeRule",
+                "Rule": {
+                  "errorEntityRelPath": "../Barcode",
+                  "errorCode": "BARCODE_CHECKSUM",
+                  "errorCondition": "FieldFilled(Barcode) And CustomCondition Ean13Invalid",
+                  "severity": "ERROR",
+                  "errorMessage": [
+                    {
+                      "locale": "en_US",
+                      "text": "Barcode failed its EAN-13 checksum."
+                    },
+                    {
+                      "locale": "de_DE",
+                      "text": "Barcode hat die EAN-13-Prüfsumme nicht bestanden."
+                    }
+                  ]
+                }
+              }
+            ]
+          }
+        }
+      ]
+    }
+  }
+}

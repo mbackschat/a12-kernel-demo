@@ -1,0 +1,17 @@
+{
+  "Playlist": {
+    "Name": "Road Trip",
+    "Tracks": [
+      {
+        "Explicit": false,
+        "Seconds": 180,
+        "Title": "Echo"
+      },
+      {
+        "Explicit": false,
+        "Seconds": 205,
+        "Title": "Echo"
+      }
+    ]
+  }
+}
