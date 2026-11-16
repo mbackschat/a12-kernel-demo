@@ -1,0 +1,222 @@
+plugins {
+    id 'java'
+    id 'application'
+}
+
+// PUBLIC + LOCAL repositories only. The A12 artifacts are resolved from
+// the local Maven repository (~/.m2), where they were published from source by the separate
+// a12-kernel-bootstrap kit (https://github.com/mbackschat/a12-kernel-bootstrap). No private registry is used.
+repositories {
+    mavenLocal()
+    mavenCentral()
+}
+
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(21)
+    }
+}
+
+def kernelVersion = '31.3.1'
+
+dependencies {
+    // Single consumer entry point. Since kernel 31 the facade exports, at compile scope (POM and Gradle
+    // module metadata agree), everything the demo compiles against:
+    //   com.mgmtp.a12.kernel.md.model.internal.betterbuilders.*            -> kernel-internal-md-model
+    //   com.mgmtp.a12.kernel.md.model.a12internal.{DocumentModel,Field,...} -> kernel-md-documentmodel
+    //   com.mgmtp.a12.kernel.md.serializer.model.a12internal.services.*     -> kernel-md-serializer
+    // plus the runtime executor (kernel-core-runtime-31-3) and, at runtime scope, Groovy for the dynamic
+    // validation path. Declaring any of them again would only duplicate a version pin.
+    implementation "com.mgmtp.a12.kernel:kernel-md-facade:${kernelVersion}"
+
+    // friendlier logging than the SLF4J no-op
+    runtimeOnly 'org.slf4j:slf4j-simple:2.0.17'
+}
+
+// Two entry points reflecting real kernel usage: author models upfront (BuilderMain),
+// then load + validate them later/elsewhere (ValidatorMain).
+application {
+    mainClass = 'com.example.a12demo.purchaseorder.ValidatorMain'   // `gradle run` == validate
+}
+
+def quietLogging = { it.systemProperty 'org.slf4j.simpleLogger.defaultLogLevel', 'warn' }
+
+tasks.named('run', quietLogging)
+
+tasks.register('buildModels', JavaExec) {
+    group = 'a12-demo'
+    description = 'Build the DocumentModel + sample documents and write them to output/ (reusable artifacts).'
+    classpath = sourceSets.main.runtimeClasspath
+    mainClass = 'com.example.a12demo.purchaseorder.BuilderMain'
+    quietLogging(it)
+}
+
+tasks.register('validate', JavaExec) {
+    group = 'a12-demo'
+    description = 'Load the model + documents from output/ and run validation.'
+    classpath = sourceSets.main.runtimeClasspath
+    mainClass = 'com.example.a12demo.purchaseorder.ValidatorMain'
+    quietLogging(it)
+    mustRunAfter 'buildModels'
+}
+
+tasks.register('demo') {
+    group = 'a12-demo'
+    description = 'Convenience: buildModels then validate.'
+    dependsOn 'buildModels', 'validate'
+}
+
+// Feature-showcase demos: one self-contained runnable Main per kernel feature area.
+def showcases = [
+    iteration  : ['com.example.a12demo.IterationDemo',   'Structural rules over a repeating group (uniqueness, Σ, filtered Σ).'],
+    computation: ['com.example.a12demo.ComputationDemo',  'Computed/derived fields: line totals + tiered discount, read back.'],
+    dsltour    : ['com.example.a12demo.DslTourDemo',      'A tour of single-field DSL rules (length, regex, dates, enums, ...).'],
+    extension  : ['com.example.a12demo.ExtensionDemo',    'Custom condition + custom field validator + rich result/label APIs.'],
+    codegen    : ['com.example.a12demo.CodegenDemo',      'Compile a model to standalone Java / JS validation code (ZIP).'],
+    docapi     : ['com.example.a12demo.DocumentApiDemo',  'Immutable DocumentV2: structural sharing, auto-vivify, diff, DM-aware coercion.'],
+    partial    : ['com.example.a12demo.PartialValidationDemo', 'Incremental/wizard validation: validatePart vs validateFull.'],
+    crossarray : ['com.example.a12demo.CrossArrayDemo',   'Cross-array logic: parallel iteration, correlated filter, order, semantic index.'],
+    language   : ['com.example.a12demo.LanguageDemo',     'Language surprises: self-validating computations, enum categories, Valid().'],
+]
+showcases.each { name, spec ->
+    tasks.register("run${name.capitalize()}", JavaExec) {
+        group = 'a12-showcase'
+        description = spec[1]
+        classpath = sourceSets.main.runtimeClasspath
+        mainClass = spec[0]
+        quietLogging(it)
+    }
+}
+tasks.register('showcases') {
+    group = 'a12-showcase'
+    description = 'Run every feature-showcase demo in sequence.'
+    dependsOn showcases.keySet().collect { "run${it.capitalize()}" }
+}
+
+// Promote the built models + documents from output/ (git-ignored) into the committed examples/
+// directory, so readers can browse them on GitHub. Preserves the per-model folder structure and
+// copies only *.json (models + documents) — the binary code-gen ZIPs under <model>/generated/ are
+// not .json so they are skipped. See CLAUDE.md.
+tasks.register('refreshExamples', Copy) {
+    group = 'a12-demo'
+    description = 'Copy built models + documents (output/**/*.json) into the committed examples/ for GitHub browsing.'
+    from('output') { include '**/*.json' }
+    into 'examples'
+}
+
+// ---------------------------------------------------------------------------------------------------
+// Typed accessors (ISOLATED): build-time codegen of compile-time-typed "overlay" views over a model.
+// Kept in its own source set so the nine main demos compile/run independently — a generator failure
+// here can never break the rest of the build. See SHOWCASE.md.
+// ---------------------------------------------------------------------------------------------------
+def generatedTypingsDir = layout.buildDirectory.dir('generated/typedAccessors')
+
+sourceSets {
+    typedAccessor {
+        java {
+            srcDir 'src/typedAccessor/java'
+            srcDir generatedTypingsDir            // the generated overlay classes
+        }
+        // reuse the main demos' classes (e.g. Demos, SubscriptionModel) and their compile/runtime deps
+        compileClasspath += sourceSets.main.output
+        runtimeClasspath += sourceSets.main.output
+    }
+}
+configurations {
+    // just the generator CLI fat-jar: the classifier jar is self-contained, so the facade's own
+    // dependencies must not be resolved onto the generator's classpath
+    typedAccessorGenerator { transitive = false }
+    typedAccessorImplementation.extendsFrom implementation   // inherit the kernel deps the demos use
+    typedAccessorRuntimeOnly.extendsFrom runtimeOnly         // inherit the SLF4J binding
+}
+dependencies {
+    typedAccessorGenerator "com.mgmtp.a12.kernel:kernel-md-facade:${kernelVersion}:typed-accessor-gen-cli"
+    // the generated overlay classes compile against kernel-md-document-v2, which the inherited facade
+    // dependency already exports
+}
+
+// (Re)generate the committed model JSON the generator reads.
+tasks.register('genSubscriptionModel', JavaExec) {
+    group = 'a12-showcase'
+    description = 'Serialize SubscriptionModel to src/main/resources/models/subscription.dm.json (generator input).'
+    classpath = sourceSets.main.runtimeClasspath
+    mainClass = 'com.example.a12demo.SubscriptionModelWriter'
+    quietLogging(it)
+}
+
+// Run the typed-accessor generator over that model JSON, emitting overlay sources into the build dir.
+tasks.register('genTypedAccessors', JavaExec) {
+    group = 'a12-showcase'
+    description = 'Generate typed-overlay accessor classes for the subscription model.'
+    def modelJson = file('src/main/resources/models/subscription.dm.json')
+    classpath = configurations.typedAccessorGenerator
+    mainClass = 'com.mgmtp.a12.kernel.md.document.typed_accessor_gen.TypedAccessorGenerator'
+    inputs.file(modelJson)
+    outputs.dir(generatedTypingsDir)
+    doFirst { generatedTypingsDir.get().asFile.mkdirs() }
+    args '--document-model-file', modelJson,
+         '--package-prefix', 'com.example.a12demo.typed',
+         '--output-dir', generatedTypingsDir.get().asFile
+}
+tasks.named('compileTypedAccessorJava') { dependsOn 'genTypedAccessors' }
+
+tasks.register('runTyped', JavaExec) {
+    group = 'a12-showcase'
+    description = 'Typed-accessor overlay views: compile-time-typed, autocompleting document access.'
+    classpath = sourceSets.typedAccessor.runtimeClasspath
+    mainClass = 'com.example.a12demo.TypedAccessorDemo'
+    quietLogging(it)
+}
+
+// ---------------------------------------------------------------------------------------------------
+// TypeScript parity showcase (ts/): validate the demo documents in Node.js with the kernel's TypeScript
+// runtime and compare every result with the Java runtime. Needs Node.js 24+ and pnpm on the PATH, so it is
+// not part of `showcases`. See SHOWCASE.md.
+// ---------------------------------------------------------------------------------------------------
+def bootstrapHome = providers.environmentVariable('A12_BOOTSTRAP_HOME')
+        .orElse(file('../.a12-bootstrap/2026.06-ext2').path)
+
+// The kit builds the A12 npm packages but publishes them to no registry; ts/package.json installs them
+// from these copies.
+tasks.register('tsVendor', Copy) {
+    group = 'a12-showcase'
+    description = 'Copy the A12 npm tarballs from the a12-kernel-bootstrap working directory into ts/vendor/.'
+    from(bootstrapHome.map { "$it/npm-artifacts" }) { include '*.tgz' }
+    into 'ts/vendor'
+}
+
+tasks.register('tsInstall', Exec) {
+    group = 'a12-showcase'
+    description = 'Install the TypeScript showcase dependencies with pnpm.'
+    dependsOn 'tsVendor'
+    // Checks the kit's directory rather than ts/vendor/, so tarballs left there by an earlier run can't hide a
+    // missing or wrong A12_BOOTSTRAP_HOME (tsVendor just copies nothing when its source directory is absent).
+    def facadeTarball = "com.mgmtp.a12.kernel-kernel-md-facade-${kernelVersion}.tgz"
+    doFirst {
+        def npmArtifacts = file("${bootstrapHome.get()}/npm-artifacts")
+        if (!new File(npmArtifacts, facadeTarball).isFile()) {
+            throw new GradleException("${facadeTarball} not found in ${npmArtifacts}. Run the a12-kernel-bootstrap " +
+                    "kit for this release first, or set A12_BOOTSTRAP_HOME to its working directory.")
+        }
+    }
+    workingDir 'ts'
+    commandLine 'pnpm', 'install'
+}
+
+// Java compiles each model to JavaScript and records its own results for the parity check.
+tasks.register('exportJs', JavaExec) {
+    group = 'a12-showcase'
+    description = 'Compile the persisted models to JavaScript and record the Java validation results.'
+    dependsOn 'buildModels', 'runIteration', 'runComputation'   // they persist the models and documents read here
+    classpath = sourceSets.main.runtimeClasspath
+    mainClass = 'com.example.a12demo.JsExport'
+    quietLogging(it)
+}
+
+tasks.register('runTs', Exec) {
+    group = 'a12-showcase'
+    description = 'TypeScript parity: run the same rules in Node.js and compare every result with Java.'
+    dependsOn 'tsInstall', 'exportJs'
+    workingDir 'ts'
+    commandLine 'pnpm', 'run', '--silent', 'parity'
+}

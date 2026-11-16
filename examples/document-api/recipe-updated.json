@@ -1,0 +1,13 @@
+{
+  "Recipe": {
+    "Title": "Fluffy Pancakes",
+    "Ingredients": [
+      {},
+      {},
+      {
+        "Grams": 250,
+        "Name": "Milk"
+      }
+    ]
+  }
+}

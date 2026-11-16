@@ -1,0 +1,47 @@
+{
+  "Shipment": {
+    "Capacity": [
+      {
+        "Units": 150,
+        "Warehouse": "BER"
+      },
+      {
+        "Units": 120,
+        "Warehouse": "CGN"
+      }
+    ],
+    "Demand": [
+      {
+        "Units": 100,
+        "Warehouse": "BER"
+      },
+      {
+        "Units": 50,
+        "Warehouse": "HAM"
+      },
+      {
+        "Units": 200,
+        "Warehouse": "CGN"
+      }
+    ],
+    "Holidays": [
+      {
+        "HolidayDate": "2026-12-25"
+      }
+    ],
+    "Stops": [
+      {
+        "Eta": "2026-03-20",
+        "Location": "BER"
+      },
+      {
+        "Eta": "2026-03-10",
+        "Location": "HAM"
+      },
+      {
+        "Eta": "2026-12-25",
+        "Location": "CGN"
+      }
+    ]
+  }
+}
