@@ -1,0 +1,24 @@
+{
+  "Sheet": {
+    "Employee": "Dana Lee",
+    "Days": [
+      {
+        "Day": "Mon",
+        "Hours": 8,
+        "Km": 40,
+        "Rate": 50,
+        "DayPay": 400
+      },
+      {
+        "Day": "Tue",
+        "Hours": 8,
+        "Km": 25,
+        "Rate": 80,
+        "DayPay": 640
+      }
+    ],
+    "WeekPay": 1040,
+    "Bonus": 104,
+    "WeekCost": 1059.5
+  }
+}

@@ -1,0 +1,15 @@
+{
+  "Subscription": {
+    "Tier": "PRO",
+    "Addons": [
+      {
+        "MonthlyFee": 9.99,
+        "Name": "Extra Seats"
+      },
+      {
+        "MonthlyFee": 19.00,
+        "Name": "Priority Support"
+      }
+    ]
+  }
+}

@@ -1,0 +1,9 @@
+.gradle/
+build/
+output/
+*.log
+.idea/
+*.iml
+.DS_Store
+ts/node_modules/
+ts/vendor/
